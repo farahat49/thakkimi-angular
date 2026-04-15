@@ -1,0 +1,492 @@
+<app-layout
+  [title]="item?.title || 'تفاصيل العنصر'"
+  [subtitle]="item ? getItemTypeLabel(item.type) + ' - ' + item.itemNumber : ''"
+>
+  <ng-container slot="actions">
+    <button class="page-action ghost" [routerLink]="['/todo']">
+      <span class="material-icons">chevron_right</span>
+      رجوع
+    </button>
+    <button
+      *ngIf="canManage && item?.status !== 'COMPLETED'"
+      class="page-action neutral"
+      (click)="openEdit()"
+    >
+      <span class="material-icons">edit</span>
+      تعديل
+    </button>
+    <button
+      *ngIf="canComplete"
+      class="page-action success"
+      (click)="completeItem()"
+      [disabled]="completing"
+    >
+      <span class="material-icons">check_circle</span>
+      {{ completing ? "جاري..." : "إكمال" }}
+    </button>
+  </ng-container>
+
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>جاري تحميل التفاصيل...</p>
+  </div>
+
+  <div *ngIf="!loading && item" class="detail-page">
+    <section class="tabs-shell">
+      <button
+        class="tab-pill"
+        [class.active]="activeTab === 'details'"
+        (click)="setActiveTab('details')"
+      >
+        <span class="material-icons">info</span>
+        التفاصيل
+      </button>
+
+      <button
+        class="tab-pill"
+        [class.active]="activeTab === 'chat'"
+        (click)="setActiveTab('chat')"
+      >
+        <span class="material-icons">chat_bubble_outline</span>
+        المحادثة
+        <span
+          *ngIf="item.unreadCount && item.unreadCount > 0"
+          class="tab-counter"
+          >{{ item.unreadCount }}</span
+        >
+      </button>
+
+      <button
+        class="tab-pill"
+        [class.active]="activeTab === 'members'"
+        (click)="setActiveTab('members')"
+      >
+        <span class="material-icons">group</span>
+        الأعضاء
+      </button>
+
+      <button
+        class="tab-pill"
+        [class.active]="activeTab === 'activity'"
+        (click)="setActiveTab('activity')"
+      >
+        <span class="material-icons">history</span>
+        السجل
+      </button>
+    </section>
+
+    <section *ngIf="activeTab === 'details'" class="content-stack">
+      <article class="hero-card">
+        <div class="hero-badges">
+          <span class="status-chip" [ngClass]="getStatusClass(item.status)">
+            <span class="material-icons">check_circle</span>
+            {{ getStatusLabel(item.status) }}
+          </span>
+
+          <span class="meta-chip">{{ getItemTypeLabel(item.type) }}</span>
+
+          <span *ngIf="item.importance === 'SECRET'" class="meta-chip secret">
+            <span class="material-icons">lock</span>
+            سري
+          </span>
+
+          <span
+            *ngIf="item.type === 'COMMITTEE' && item.committeeType"
+            class="meta-chip"
+          >
+            {{
+              item.committeeType === "INTERNAL" ? "لجنة داخلية" : "لجنة خارجية"
+            }}
+          </span>
+        </div>
+
+        <p class="hero-description">
+          {{
+            item.description ||
+              "لا يوجد وصف لهذه " + getItemTypeLabel(item.type)
+          }}
+        </p>
+      </article>
+
+      <section class="details-grid">
+        <article class="detail-card">
+          <div class="detail-card-label">
+            <span class="material-icons">person_outline</span>
+            المنشئ
+          </div>
+          <div class="detail-card-value">
+            {{ getUserName(item.createdById) }}
+          </div>
+        </article>
+
+        <article class="detail-card">
+          <div class="detail-card-label">
+            <span class="material-icons">calendar_month</span>
+            تاريخ الاستحقاق
+          </div>
+          <div class="detail-card-value">
+            {{ item.dueDate | date: "d MMMM y, h:mm a" }}
+          </div>
+        </article>
+
+        <article class="detail-card">
+          <div class="detail-card-label">
+            <span class="material-icons">schedule</span>
+            آخر تحديث
+          </div>
+          <div class="detail-card-value">
+            {{ item.updatedAt | date: "d MMMM y, h:mm a" }}
+          </div>
+        </article>
+
+        <article class="detail-card">
+          <div class="detail-card-label">
+            <span class="material-icons">history_toggle_off</span>
+            تاريخ الإنشاء
+          </div>
+          <div class="detail-card-value">
+            {{ item.createdAt | date: "d MMMM y, h:mm a" }}
+          </div>
+        </article>
+      </section>
+
+      <section class="members-card compact">
+        <div class="section-header">
+          <div>
+            <h3>المكلفون</h3>
+            <p>
+              {{
+                item.assigneeIds.length
+                  ? item.assigneeIds.length + " مكلف"
+                  : "لا يوجد مكلفون"
+              }}
+            </p>
+          </div>
+        </div>
+
+        <div
+          *ngIf="item.assigneeIds.length; else noAssigneesBlock"
+          class="people-grid"
+        >
+          <article
+            *ngFor="let assigneeId of item.assigneeIds"
+            class="person-card assignee"
+          >
+            <div class="person-avatar assignee">
+              {{ getUserInitial(assigneeId) }}
+            </div>
+            <div class="person-copy">
+              <strong>{{ getUserName(assigneeId) }}</strong>
+              <span>مكلف</span>
+            </div>
+          </article>
+        </div>
+
+        <ng-template #noAssigneesBlock>
+          <div class="empty-block">لا يوجد مكلفون</div>
+        </ng-template>
+      </section>
+    </section>
+
+    <section *ngIf="activeTab === 'members'" class="content-stack">
+      <div *ngIf="memberActionError" class="error-banner">
+        {{ memberActionError }}
+      </div>
+
+      <section class="members-card">
+        <div class="section-header">
+          <div>
+            <h3>أعضاء {{ getItemTypeLabel(item.type) }}</h3>
+            <p>{{ item.memberIds.length }} عضو</p>
+          </div>
+        </div>
+
+        <div
+          *ngIf="item.memberIds.length; else noMembersBlock"
+          class="people-grid"
+        >
+          <article *ngFor="let memberId of item.memberIds" class="person-card">
+            <div class="person-avatar">{{ getUserInitial(memberId) }}</div>
+            <div class="person-copy">
+              <strong>{{ getUserName(memberId) }}</strong>
+              <span>{{
+                memberId === item.createdById ? "المنشئ" : "عضو"
+              }}</span>
+            </div>
+            <button
+              *ngIf="canManage && memberId !== item.createdById"
+              type="button"
+              class="icon-button danger"
+              (click)="removeMember(memberId)"
+              [disabled]="memberActionBusy"
+              title="إزالة العضو"
+            >
+              <span class="material-icons">delete_outline</span>
+            </button>
+          </article>
+        </div>
+
+        <ng-template #noMembersBlock>
+          <div class="empty-block">لا يوجد أعضاء حالياً</div>
+        </ng-template>
+      </section>
+
+      <section class="members-card">
+        <div class="section-header">
+          <div>
+            <h3>المكلفون</h3>
+            <p>{{ item.assigneeIds.length }} مكلف</p>
+          </div>
+        </div>
+
+        <div
+          *ngIf="item.assigneeIds.length; else noAssignees"
+          class="people-grid"
+        >
+          <article
+            *ngFor="let assigneeId of item.assigneeIds"
+            class="person-card assignee"
+          >
+            <div class="person-avatar assignee">
+              {{ getUserInitial(assigneeId) }}
+            </div>
+            <div class="person-copy">
+              <strong>{{ getUserName(assigneeId) }}</strong>
+              <span>مكلف</span>
+            </div>
+          </article>
+        </div>
+
+        <ng-template #noAssignees>
+          <div class="empty-block">لا يوجد مكلفون</div>
+        </ng-template>
+      </section>
+
+      <section
+        *ngIf="canManage && item.status !== 'COMPLETED'"
+        class="members-card"
+      >
+        <div class="section-header">
+          <div>
+            <h3>إضافة عضو</h3>
+            <p>اختر مستخدمًا لإضافته إلى {{ getItemTypeLabel(item.type) }}</p>
+          </div>
+        </div>
+
+        <div class="member-form">
+          <select [(ngModel)]="selectedAddUserId" class="member-select">
+            <option [ngValue]="null">اختر مستخدماً</option>
+            <option *ngFor="let user of nonMembers" [ngValue]="user.id">
+              {{ user.name }}
+            </option>
+          </select>
+
+          <button
+            class="assign-button"
+            (click)="addMember()"
+            [disabled]="!selectedAddUserId || memberActionBusy"
+          >
+            <span class="material-icons">person_add</span>
+            تكليف
+          </button>
+        </div>
+      </section>
+    </section>
+
+    <section *ngIf="activeTab === 'chat'" class="chat-card">
+      <div class="messages-list">
+        <div *ngIf="messages.length === 0" class="empty-block large">
+          <span class="material-icons">chat_bubble_outline</span>
+          <p>لا توجد رسائل بعد</p>
+        </div>
+
+        <div
+          *ngFor="let msg of messages"
+          class="message"
+          [class.own]="isCurrentUser(msg.userId)"
+        >
+          <div class="message-avatar">{{ getUserInitial(msg.userId) }}</div>
+          <div class="message-bubble">
+            <div class="message-meta">
+              <strong>{{ getUserName(msg.userId) }}</strong>
+              <span>{{
+                msg.createdAt | date: "d MMM, h:mm a" : "" : "ar"
+              }}</span>
+            </div>
+            <div *ngIf="msg.text" class="message-text">{{ msg.text }}</div>
+            <button
+              *ngIf="msg.hasAttachment"
+              class="attachment-button"
+              (click)="downloadAttachment(msg)"
+            >
+              <span class="material-icons">attach_file</span>
+              {{ msg.attachmentFileName || "فتح المرفق" }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="selectedAttachment" class="selected-file">
+        <span class="material-icons">description</span>
+        <span>{{ selectedAttachment.name }}</span>
+        <button type="button" class="icon-button" (click)="clearAttachment()">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+
+      <div class="chat-input">
+        <label class="attach-trigger">
+          <input type="file" hidden (change)="onAttachmentSelected($event)" />
+          <span class="material-icons">attach_file</span>
+        </label>
+
+        <input
+          type="text"
+          [(ngModel)]="messageText"
+          placeholder="اكتب رسالة..."
+          class="chat-text-input"
+          (keyup.enter)="sendMessage()"
+        />
+
+        <button
+          class="send-button"
+          (click)="sendMessage()"
+          [disabled]="sending || (!messageText.trim() && !selectedAttachment)"
+        >
+          <span class="material-icons">send</span>
+        </button>
+      </div>
+    </section>
+
+    <section *ngIf="activeTab === 'activity'" class="audit-card">
+      <div *ngIf="auditEvents.length === 0" class="empty-block large">
+        <span class="material-icons">history</span>
+        <p>لا توجد أحداث مسجلة بعد</p>
+      </div>
+
+      <div *ngFor="let event of auditEvents" class="audit-item">
+        <div class="audit-dot"></div>
+        <div class="audit-content">
+          <div class="audit-row">
+            <strong>{{ event.userName }}</strong>
+            <span>{{ event.timestamp | date: "d MMMM y, h:mm a" }}</span>
+          </div>
+          <p>{{ event.description }}</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</app-layout>
+
+<div
+  *ngIf="showEditModal"
+  class="modal-overlay"
+  (click)="showEditModal = false"
+>
+  <div class="modal" (click)="$event.stopPropagation()" dir="rtl">
+    <div class="modal-header">
+      <h2>تعديل {{ item ? getItemTypeLabel(item.type) : "العنصر" }}</h2>
+      <button class="icon-button" (click)="showEditModal = false">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label>النوع</label>
+        <select [(ngModel)]="editForm.type" class="form-input">
+          <option value="TASK">مهمة</option>
+          <option value="COMMITTEE">لجنة</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>العنوان</label>
+        <input
+          type="text"
+          [(ngModel)]="editForm.title"
+          class="form-input"
+          maxlength="200"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>الوصف</label>
+        <textarea
+          [(ngModel)]="editForm.description"
+          class="form-input"
+          rows="4"
+        ></textarea>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>الأهمية</label>
+          <select [(ngModel)]="editForm.importance" class="form-input">
+            <option value="NORMAL">مهمة</option>
+            <option value="SECRET">سري</option>
+          </select>
+        </div>
+
+        <div *ngIf="editForm.type === 'COMMITTEE'" class="form-group">
+          <label>نوع اللجنة</label>
+          <select [(ngModel)]="editForm.committeeType" class="form-input">
+            <option value="">اختر</option>
+            <option value="INTERNAL">داخلية</option>
+            <option value="EXTERNAL">خارجية</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>تاريخ الاستحقاق</label>
+          <input
+            type="date"
+            [(ngModel)]="editForm.dueDate"
+            class="form-input"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>الأعضاء</label>
+        <div class="users-checkboxes">
+          <label *ngFor="let user of users" class="user-checkbox">
+            <input
+              type="checkbox"
+              [checked]="editForm.memberIds.includes(user.id)"
+              (change)="toggleEditMember(user.id)"
+            />
+            <span>{{ user.name }}</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>المكلفون</label>
+        <div class="users-checkboxes">
+          <label *ngFor="let user of users" class="user-checkbox">
+            <input
+              type="checkbox"
+              [checked]="editForm.assigneeIds.includes(user.id)"
+              (change)="toggleEditAssignee(user.id)"
+            />
+            <span>{{ user.name }}</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="modal-button ghost" (click)="showEditModal = false">
+        إلغاء
+      </button>
+      <button
+        class="modal-button primary"
+        (click)="saveEdit()"
+        [disabled]="saving || !editForm.title.trim()"
+      >
+        {{ saving ? "جاري الحفظ..." : "حفظ التعديلات" }}
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,121 @@
+<div class="app-wrapper" dir="rtl">
+  <!-- Sidebar Overlay for mobile -->
+  <div class="sidebar-overlay" [class.active]="sidebarOpen" (click)="sidebarOpen = false"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" [class.open]="sidebarOpen">
+    <!-- Logo -->
+    <div class="sidebar-logo">
+      <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663400849792/Kjvu9H5c5ZRsmi7PeLLB8L/thakkirni-logo-mcL3sCZxkBusCn7XrJBXiV.webp" alt="ذكّرني" class="logo-img" />
+      <div>
+        <h2 class="logo-title">ذكّرني</h2>
+        <p class="logo-subtitle">إدارة المهام واللجان</p>
+      </div>
+      <button class="close-btn" (click)="sidebarOpen = false">✕</button>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+      <a *ngFor="let item of navItems"
+         [routerLink]="item.path"
+         routerLinkActive="active"
+         class="nav-item"
+         (click)="sidebarOpen = false">
+        <span class="material-icons nav-icon">{{ item.icon }}</span>
+        <span>{{ item.label }}</span>
+        <span *ngIf="item.path === '/overdue' && unreadCount > 0" class="badge">{{ unreadCount }}</span>
+      </a>
+
+      <div *ngIf="isAdmin || isManager" class="nav-divider"></div>
+      <div *ngIf="isAdmin || isManager" class="nav-section-label">الإدارة</div>
+
+      <a *ngFor="let item of managerNavItems"
+         [routerLink]="item.path"
+         routerLinkActive="active"
+         class="nav-item"
+         (click)="sidebarOpen = false">
+        <span class="material-icons nav-icon">{{ item.icon }}</span>
+        <span>{{ item.label }}</span>
+      </a>
+
+      <ng-container *ngIf="isAdmin">
+        <a *ngFor="let item of adminNavItems"
+           [routerLink]="item.path"
+           routerLinkActive="active"
+           class="nav-item"
+           (click)="sidebarOpen = false">
+          <span class="material-icons nav-icon">{{ item.icon }}</span>
+          <span>{{ item.label }}</span>
+        </a>
+      </ng-container>
+    </nav>
+
+    <!-- Bottom -->
+    <div class="sidebar-bottom">
+      <button class="nav-item notif-btn" (click)="toggleNotifications()">
+        <span class="material-icons nav-icon">notifications</span>
+        <span>الإشعارات</span>
+        <span *ngIf="unreadCount > 0" class="badge">{{ unreadCount }}</span>
+      </button>
+      <div class="user-info">
+        <div class="user-avatar">{{ currentUser?.name?.charAt(0) }}</div>
+        <div class="user-details">
+          <p class="user-name">{{ currentUser?.name }}</p>
+          <p class="user-role">{{ currentUser?.role === 'ADMIN' ? 'مدير نظام' : currentUser?.role === 'MANAGER' ? 'مدير' : 'مستخدم' }}</p>
+        </div>
+        <button class="logout-btn" (click)="logout()" title="تسجيل الخروج">
+          <span class="material-icons">logout</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <div class="top-bar-right">
+        <button class="menu-btn" (click)="toggleSidebar()">
+          <span class="material-icons">menu</span>
+        </button>
+        <div class="page-info">
+          <h1 class="page-title">{{ title }}</h1>
+          <p *ngIf="subtitle" class="page-subtitle">{{ subtitle }}</p>
+        </div>
+      </div>
+      <div class="top-bar-left">
+        <ng-content select="[slot=actions]"></ng-content>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <div class="page-content">
+      <ng-content></ng-content>
+    </div>
+  </main>
+
+  <!-- Notifications Panel -->
+  <div class="notifications-panel" [class.open]="notificationsOpen">
+    <div class="notif-header">
+      <h3>الإشعارات</h3>
+      <button (click)="notificationsOpen = false">✕</button>
+    </div>
+    <div class="notif-list">
+      <div *ngIf="notifications.length === 0" class="notif-empty">
+        لا توجد إشعارات
+      </div>
+      <div *ngFor="let notif of notifications"
+           class="notif-item"
+           [class.unread]="!notif.isRead"
+           (click)="markRead(notif.id)">
+        <div class="notif-dot" [class.active]="!notif.isRead"></div>
+        <div class="notif-content">
+          <p class="notif-title">{{ notif.title }}</p>
+          <p class="notif-body">{{ notif.body }}</p>
+          <p class="notif-time">{{ notif.createdAt | date:'short' }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="notif-overlay" [class.active]="notificationsOpen" (click)="notificationsOpen = false"></div>
+</div>

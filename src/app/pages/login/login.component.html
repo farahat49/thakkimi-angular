@@ -1,0 +1,54 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="logo-wrapper">
+        <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663400849792/Kjvu9H5c5ZRsmi7PeLLB8L/thakkirni-logo-mcL3sCZxkBusCn7XrJBXiV.webp" alt="ذكّرني" class="logo" />
+      </div>
+      <h1 class="app-title">ذكّرني</h1>
+      <p class="app-subtitle">نظام إدارة المهام والمنظمات</p>
+    </div>
+
+    <form (ngSubmit)="onSubmit()" class="login-form">
+      <div class="form-group">
+        <label for="email">البريد الإلكتروني</label>
+        <input
+          id="email"
+          type="email"
+          [(ngModel)]="email"
+          name="email"
+          placeholder="أدخل بريدك الإلكتروني"
+          required
+          class="form-input"
+          dir="ltr"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="password">كلمة المرور</label>
+        <input
+          id="password"
+          type="password"
+          [(ngModel)]="password"
+          name="password"
+          placeholder="أدخل كلمة المرور"
+          required
+          class="form-input"
+          dir="ltr"
+        />
+      </div>
+
+      <div *ngIf="error" class="error-message">
+        {{ error }}
+      </div>
+
+      <button type="submit" [disabled]="loading" class="btn-login">
+        <span *ngIf="!loading">تسجيل الدخول</span>
+        <span *ngIf="loading" class="spinner"></span>
+      </button>
+    </form>
+
+    <div class="login-hint">
+      <p>للتجربة: ahmed&#64;example.com (أي كلمة مرور)</p>
+    </div>
+  </div>
+</div>

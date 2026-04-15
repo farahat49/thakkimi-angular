@@ -1,0 +1,59 @@
+<app-layout title="تقارير المديرين" subtitle="إحصائيات أداء الموظفين">
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>جاري التحميل...</p>
+  </div>
+
+  <div *ngIf="!loading" class="managers-content">
+    <div *ngFor="let stat of getUserStats()" class="manager-card">
+      <div class="manager-header" (click)="toggleUser(stat.user.id)">
+        <div class="manager-avatar">{{ stat.user.name.charAt(0) }}</div>
+        <div class="manager-info">
+          <h3 class="manager-name">{{ stat.user.name }}</h3>
+          <p class="manager-email">{{ stat.user.email }}</p>
+        </div>
+        <div class="manager-stats">
+          <div class="stat-item">
+            <span class="stat-num todo">{{ stat.active }}</span>
+            <span class="stat-lbl">قيد التنفيذ</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num overdue">{{ stat.overdue }}</span>
+            <span class="stat-lbl">متأخرة</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num completed">{{ stat.completed }}</span>
+            <span class="stat-lbl">مكتملة</span>
+          </div>
+        </div>
+        <div class="rate-badge" [class]="stat.rate >= 70 ? 'high' : stat.rate >= 40 ? 'medium' : 'low'">
+          {{ stat.rate }}%
+        </div>
+        <span class="material-icons expand-icon" [class.rotated]="expandedUser === stat.user.id">
+          expand_more
+        </span>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="progress-bar">
+        <div class="progress-fill" [style.width.%]="stat.rate"></div>
+      </div>
+
+      <!-- Expanded Items -->
+      <div *ngIf="expandedUser === stat.user.id" class="expanded-items">
+        <div *ngIf="stat.items.length === 0" class="no-items">
+          لا توجد مهام مكلفة لهذا الموظف
+        </div>
+        <a *ngFor="let item of stat.items" [routerLink]="['/items', item.id]" class="item-row">
+          <span class="item-type" [class]="item.type.toLowerCase()">
+            {{ item.type === 'TASK' ? 'مهمة' : 'لجنة' }}
+          </span>
+          <span class="item-title">{{ item.title }}</span>
+          <span class="item-status" [class]="item.status.toLowerCase()">
+            {{ item.status === 'ACTIVE' ? 'قيد التنفيذ' : item.status === 'OVERDUE' ? 'متأخرة' : 'مكتملة' }}
+          </span>
+        </a>
+      </div>
+    </div>
+  </div>
+</app-layout>

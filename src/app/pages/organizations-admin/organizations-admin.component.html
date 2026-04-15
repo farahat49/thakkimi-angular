@@ -1,0 +1,168 @@
+<app-layout
+  title="إدارة الهيكل التنظيمي"
+  subtitle="إدارة الوكالات والإدارات والشعب والمسميات الوظيفية"
+>
+  <div class="admin-grid">
+    <div *ngIf="apiError" class="error-banner">{{ apiError }}</div>
+    <div *ngIf="successMessage" class="success-banner">
+      {{ successMessage }}
+    </div>
+
+    <section class="card">
+      <h2>مدير/مساعد</h2>
+      <div class="create-row">
+        <input
+          [(ngModel)]="newAgency"
+          placeholder="اسم الوكالة"
+          class="form-input"
+        />
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="createAgency()"
+          [disabled]="isBusy('agency') || !newAgency.trim()"
+        >
+          {{ isBusy("agency") ? "جاري..." : "إضافة" }}
+        </button>
+      </div>
+      <div class="list">
+        <div *ngFor="let agency of agencies" class="list-row">
+          <span>{{ agency.name }}</span>
+          <button
+            type="button"
+            class="btn-delete"
+            (click)="deleteAgency(agency.id)"
+            [disabled]="busyAction !== null"
+          >
+            حذف
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>الإدارات</h2>
+      <div class="create-row stacked">
+        <input
+          [(ngModel)]="newDepartment.name"
+          placeholder="اسم الإدارة"
+          class="form-input"
+        />
+        <select [(ngModel)]="newDepartment.agencyId" class="form-input">
+          <option [ngValue]="undefined">اختر الوكالة</option>
+          <option *ngFor="let agency of agencies" [ngValue]="agency.id">
+            {{ agency.name }}
+          </option>
+        </select>
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="createDepartment()"
+          [disabled]="
+            isBusy('department') ||
+            !newDepartment.name.trim() ||
+            !newDepartment.agencyId
+          "
+        >
+          {{ isBusy("department") ? "جاري..." : "إضافة" }}
+        </button>
+      </div>
+      <div class="list">
+        <div *ngFor="let department of departments" class="list-row">
+          <span
+            >{{ department.name }} —
+            {{ getAgencyName(department.agencyId) }}</span
+          >
+          <button
+            type="button"
+            class="btn-delete"
+            (click)="deleteDepartment(department.id)"
+            [disabled]="busyAction !== null"
+          >
+            حذف
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>الشعب</h2>
+      <div class="create-row stacked">
+        <input
+          [(ngModel)]="newSection.name"
+          placeholder="اسم الشعبة"
+          class="form-input"
+        />
+        <select [(ngModel)]="newSection.departmentId" class="form-input">
+          <option [ngValue]="undefined">اختر الإدارة</option>
+          <option
+            *ngFor="let department of departments"
+            [ngValue]="department.id"
+          >
+            {{ department.name }}
+          </option>
+        </select>
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="createSection()"
+          [disabled]="
+            isBusy('section') ||
+            !newSection.name.trim() ||
+            !newSection.departmentId
+          "
+        >
+          {{ isBusy("section") ? "جاري..." : "إضافة" }}
+        </button>
+      </div>
+      <div class="list">
+        <div *ngFor="let section of sections" class="list-row">
+          <span
+            >{{ section.name }} —
+            {{ getDepartmentName(section.departmentId) }}</span
+          >
+          <button
+            type="button"
+            class="btn-delete"
+            (click)="deleteSection(section.id)"
+            [disabled]="busyAction !== null"
+          >
+            حذف
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>المسميات الوظيفية</h2>
+      <div class="create-row">
+        <input
+          [(ngModel)]="newJobTitle"
+          placeholder="اسم المسمى الوظيفي"
+          class="form-input"
+        />
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="createJobTitle()"
+          [disabled]="isBusy('job-title') || !newJobTitle.trim()"
+        >
+          {{ isBusy("job-title") ? "جاري..." : "إضافة" }}
+        </button>
+      </div>
+      <div class="list">
+        <div *ngFor="let jobTitle of jobTitles" class="list-row">
+          <span>{{ jobTitle.name }}</span>
+          <button
+            type="button"
+            class="btn-delete"
+            (click)="deleteJobTitle(jobTitle.id)"
+            [disabled]="busyAction !== null"
+          >
+            حذف
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+</app-layout>

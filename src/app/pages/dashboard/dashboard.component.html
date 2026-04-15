@@ -1,0 +1,95 @@
+<app-layout title="لوحة التحكم" subtitle="نظرة عامة على المهام واللجان">
+  <div class="dashboard-content">
+    <div class="stats-grid">
+      <a routerLink="/todo" class="stat-card todo">
+        <div class="stat-icon"><span class="material-icons">assignment</span></div>
+        <div class="stat-info">
+          <p class="stat-label">قيد التنفيذ</p>
+          <p class="stat-value">{{ todoItems }}</p>
+        </div>
+      </a>
+      <a routerLink="/overdue" class="stat-card overdue">
+        <div class="stat-icon"><span class="material-icons">warning</span></div>
+        <div class="stat-info">
+          <p class="stat-label">المتأخرة</p>
+          <p class="stat-value">{{ overdueItems }}</p>
+        </div>
+      </a>
+      <a routerLink="/completed" class="stat-card completed">
+        <div class="stat-icon"><span class="material-icons">check_circle</span></div>
+        <div class="stat-info">
+          <p class="stat-label">المكتملة</p>
+          <p class="stat-value">{{ completedItems }}</p>
+        </div>
+      </a>
+      <div class="stat-card total">
+        <div class="stat-icon"><span class="material-icons">folder</span></div>
+        <div class="stat-info">
+          <p class="stat-label">الإجمالي</p>
+          <p class="stat-value">{{ totalItems }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="loading-state">
+      <div class="spinner-large"></div>
+      <p>جاري التحميل...</p>
+    </div>
+
+    <div *ngIf="!loading && authService.isAdminOrManager() && users.length > 0" class="section">
+      <h2 class="section-title">إحصائيات الإدارات</h2>
+      <div class="users-stats">
+        <div *ngFor="let stat of getDepartmentStats()" class="user-stat-card">
+          <div class="user-stat-header">
+            <div class="user-avatar">{{ stat.name.charAt(0) }}</div>
+            <div class="user-info">
+              <p class="user-name">{{ stat.name }}</p>
+              <p class="user-email">إجمالي العناصر: {{ stat.total }}</p>
+            </div>
+          </div>
+          <div class="user-stat-counts">
+            <span class="count-pill todo">قيد التنفيذ {{ stat.active }}</span>
+            <span class="count-pill overdue">متأخرة {{ stat.overdue }}</span>
+            <span class="count-pill completed">مكتملة {{ stat.completed }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="!loading && authService.isAdminOrManager() && users.length > 0" class="section">
+      <h2 class="section-title">إحصائيات المستخدمين</h2>
+      <div class="users-stats">
+        <div *ngFor="let stat of getUserStats()" class="user-stat-card">
+          <div class="user-stat-header" (click)="toggleUser(stat.user.id)">
+            <div class="user-avatar">{{ stat.user.name.charAt(0) }}</div>
+            <div class="user-info">
+              <p class="user-name">{{ stat.user.name }}</p>
+              <p class="user-email">{{ stat.user.email }}</p>
+            </div>
+            <div class="user-rate">
+              <div class="rate-circle" [style.background]="'conic-gradient(#059669 ' + stat.rate + '%, #e2e8f0 0)'">
+                <span>{{ stat.rate }}%</span>
+              </div>
+            </div>
+          </div>
+          <div class="user-stat-counts">
+            <span class="count-badge todo">{{ stat.active }} قيد التنفيذ</span>
+            <span class="count-badge overdue">{{ stat.overdue }} متأخرة</span>
+            <span class="count-badge completed">{{ stat.completed }} مكتملة</span>
+          </div>
+
+          <div *ngIf="expandedUser === stat.user.id" class="expanded-items">
+            <div *ngIf="stat.items.length === 0" class="no-items">لا توجد عناصر مرتبطة بهذا المستخدم</div>
+            <a *ngFor="let item of stat.items" [routerLink]="['/items', item.id]" class="item-row">
+              <span class="item-type" [class]="item.type.toLowerCase()">{{ item.type === 'TASK' ? 'مهمة' : 'لجنة' }}</span>
+              <span class="item-title">{{ item.title }}</span>
+              <span class="item-status" [class]="item.status.toLowerCase()">
+                {{ item.status === 'ACTIVE' ? 'قيد التنفيذ' : item.status === 'OVERDUE' ? 'متأخرة' : 'مكتملة' }}
+              </span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</app-layout>
