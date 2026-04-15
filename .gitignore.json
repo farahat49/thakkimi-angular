@@ -1,0 +1,31 @@
+# Dependency directories
+node_modules/
+
+# Build outputs
+/dist/
+/tmp/
+/out-tsc/
+/bazel-out/
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.stackdump
+.project
+.classpath
+.settings/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Angular CLI cache
+/.angular/
