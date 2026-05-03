@@ -1,0 +1,157 @@
+<app-layout>
+
+@if(loading)
+{
+  <div  class="loading-state">
+    <div class="spinner"></div>
+    <p>جاري التحميل...</p>
+  </div>
+
+}
+
+
+<div class="container mt-2" dir="rtl">
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 border-bottom-0">
+      <div class="row align-items-center">
+        <div class="col">
+          <h5 class="mb-0 fw-bold">قائمة الصلاحيات</h5>
+        </div>
+        <div class="col-md-4">
+        <div class="input-group">
+  <input type="text" 
+         class="form-control bg-light border-end-0" 
+         placeholder="بحث [اسم الصلاحية] ..." 
+         (input)="onSearch($event)">
+
+</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="px-4">#</th>
+              <th>أسم الصلاحية</th> 
+                          
+              <th class="text-center">الإعدادات</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of roles?.items; track $index) {
+                <tr >
+              <td class="px-4 text-muted">{{ $index + 1 }}</td>
+              <td class="fw-medium"><span class="badge text-bg-info text-black">{{item.displayName}}</span></td>
+
+              <td class="text-center">
+                      <div class="dropdown">
+                  <button class="btn btn-sm dropdown-toggle custom-btn-gold" type="button" data-bs-toggle="dropdown">
+                    الاعدادات
+                  </button>
+                  <ul class="dropdown-menu text-end shadow-sm border-0">
+                    <li>
+  <a class="dropdown-item py-2" 
+     href="javascript:void(0)" 
+     data-bs-toggle="modal" 
+     data-bs-target="#addRoleModal">
+    <i class="bi bi-plus-circle ms-2 text-primary"></i>اضافة صلاحية
+  </a>
+</li>
+                  <li>
+  <a class="dropdown-item py-2 text-danger" 
+     href="javascript:void(0)" 
+     (click)="onDeleteRole(item)">
+    <i class="bi bi-trash ms-2"></i>حذف الصلاحية
+  </a>
+</li>
+                  </ul>
+                </div>
+              </td>
+            </tr>
+            }
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+<div class="card-footer bg-white py-3 border-top">
+  <div class="d-flex justify-content-between align-items-center" dir="rtl">
+    
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-link text-decoration-none text-muted p-0 ms-3" 
+              [disabled]="roles?.pageNumber === 1"
+              (click)="onPageChange(roles!.pageNumber - 1)">
+        السابق
+      </button>
+
+      <div class="pagination-numbers d-flex gap-1">
+        <span class="page-num active">{{ roles?.pageNumber }}</span>
+        
+        <span class="page-num" (click)="onPageChange(2)">2</span>
+        <span class="page-num" (click)="onPageChange(3)">3</span>
+        <span class="page-num" (click)="onPageChange(4)">4</span>
+        <span class="page-num" (click)="onPageChange(5)">5</span>
+        <span class="text-muted mx-1">...</span>
+        <span class="page-num">{{ roles?.totalPages }}</span>
+      </div>
+
+      <button class="btn btn-link text-decoration-none text-dark p-0 me-3" 
+              [disabled]="roles?.pageNumber === roles?.totalPages"
+              (click)="onPageChange(roles!.pageNumber + 1)">
+        التالي
+      </button>
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+      <div class="custom-select-wrapper">
+        <select class="form-select form-select-sm" (change)="onPageSizeChange($event)">
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+        </select>
+      </div>
+    </div>
+
+  </div>
+</div>
+ 
+  </div>
+</div>
+
+
+</app-layout>
+
+
+<!-- Modal -->
+<div class="modal fade" id="addRoleModal" tabindex="-1" aria-labelledby="addRoleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title fw-bold" id="addRoleModalLabel">إضافة صلاحية جديدة</h5>
+        <button type="button" class="btn-close ms-0" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="roleForm" >
+          <div class="mb-3">
+            <label class="form-label">أسم الصلاحية</label>
+            <input type="text" formControlName="name" class="form-control text-start" placeholder="e.g. Admin">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">الاسم المعروض</label>
+            <input type="text" formControlName="displayName" class="form-control" placeholder="مثلاً: مدير النظام">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer border-top-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="closeModalBtn">إلغاء</button>
+        <button type="button" (click)="onSubmitRole()" [disabled]="roleForm.invalid || isSubmitting" class="btn custom-btn-gold">
+          @if(isSubmitting) { <span class="spinner-border spinner-border-sm"></span> }
+          @else { حفظ الصلاحية }
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

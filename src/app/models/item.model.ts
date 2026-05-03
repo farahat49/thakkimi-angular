@@ -15,6 +15,7 @@ export interface Item {
   completedDate?: string | null;
   dueDate: string;
   createdById: number;
+  mawaradCreatedBy:number;
   departmentId: number;
   createdAt: string;
   updatedAt: string;

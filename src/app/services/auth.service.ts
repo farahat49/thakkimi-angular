@@ -28,6 +28,7 @@ export class AuthService {
 
     return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login`, normalizedCredentials).pipe(
       tap(response => {
+        
         localStorage.setItem('token', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
         localStorage.setItem("UserIdentity",response.user.nationalId??"");

@@ -27,11 +27,16 @@ export class LayoutComponent implements OnInit {
     { label: 'قيد التنفيذ', path: '/todo', icon: 'task' },
     { label: 'المتأخرة', path: '/overdue', icon: 'warning' },
     { label: 'المكتملة', path: '/completed', icon: 'check_circle' },
+   
   ];
 
   adminNavItems = [
-    { label: 'المستخدمون', path: '/users', icon: 'group' },
-    { label: 'الهيكل التنظيمي', path: '/organizations-admin', icon: 'account_tree' }
+  
+
+    // { label: 'الهيكل التنظيمي', path: '/organizations-admin', icon: 'account_tree' },
+      { label: 'المستخدمون', path: '/users', icon: 'group' },
+        { label: 'الصلاحيات', path: '/roles', icon: 'group' },
+
   ];
 
   managerNavItems = [

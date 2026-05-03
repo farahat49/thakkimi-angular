@@ -1,8 +1,7 @@
 /* Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap');
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
-
-/* Reset & Base */
+@import "../node_modules/@ng-select/ng-select/themes/default.theme.css";/* Reset & Base */
 *, *::before, *::after {
   box-sizing: border-box;
 }

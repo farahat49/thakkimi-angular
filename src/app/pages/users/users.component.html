@@ -1,237 +1,177 @@
-<app-layout title="إدارة المستخدمين">
-  <ng-container slot="actions">
-    <button type="button" class="btn-primary" (click)="openCreate()">
-      <span class="material-icons">person_add</span>
-      إضافة مستخدم
-    </button>
-  </ng-container>
+<app-layout>
+
 
   <div *ngIf="loading" class="loading-state">
     <div class="spinner"></div>
     <p>جاري التحميل...</p>
   </div>
 
-  <div *ngIf="!loading" class="users-grid">
-    <div *ngFor="let user of users" class="user-card">
-      <div class="user-card-header">
-        <div class="user-avatar">{{ user.name.charAt(0) }}</div>
-        <div class="user-info">
-          <h3 class="user-name">{{ user.name }}</h3>
-          <p class="user-email">{{ user.email }}</p>
-          <p class="user-job-title" *ngIf="user.jobTitle">{{ user.jobTitle }}</p>
+<div class="container mt-2" dir="rtl">
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 border-bottom-0">
+      <div class="row align-items-center">
+        <div class="col">
+          <h5 class="mb-0 fw-bold">قائمة المستخدمين</h5>
         </div>
-        <span class="role-badge" [class]="user.role.toLowerCase()">
-          {{ user.role === 'ADMIN' ? 'مدير نظام' : user.role === 'MANAGER' ? 'مدير' : 'مستخدم' }}
-        </span>
-      </div>
-      <div class="user-card-body">
-        <div class="user-detail" *ngIf="user.nationalId">
-          <span class="material-icons">badge</span>
-          {{ user.nationalId }}
+        <div class="col-md-4">
+        <div class="input-group">
+  <input type="text" 
+         class="form-control bg-light border-end-0" 
+         placeholder="بحث برقم الهوية ..." 
+         (input)="onSearch($event)">
+
+</div>
         </div>
-        <div class="user-detail" *ngIf="user.agencyName || user.departmentName || user.sectionName">
-          <span class="material-icons">business</span>
-          <span>
-            <span *ngIf="user.agencyName">{{ user.agencyName }}</span>
-            <span *ngIf="user.departmentName"> / {{ user.departmentName }}</span>
-            <span *ngIf="user.sectionName"> / {{ user.sectionName }}</span>
-          </span>
-        </div>
-      </div>
-      <div class="user-card-actions">
-        <button class="btn-icon edit" (click)="openEdit(user)">
-          <span class="material-icons">edit</span>
-        </button>
-        <button class="btn-icon delete" (click)="deleteUser(user.id)">
-          <span class="material-icons">delete</span>
-        </button>
       </div>
     </div>
+
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="px-4">#</th>
+              <th>رقم الهوية</th>
+              <th>الاسم الكامل</th>
+                <th>الحاله</th>
+              <th>الرتبة</th>
+             
+              <th class="text-center">الإعدادات</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of MawaradUsers?.items; let i = index">
+              <td class="px-4 text-muted">{{ i + 1 }}</td>
+              <td class="fw-medium">{{user.userName}}</td>
+              <td>{{user.fullName}}</td>
+         <td>
+  <span class="badge" [ngClass]="user.isActive ? 'text-bg-success' : 'text-bg-danger'">
+    {{ user.isActive ? "نشط" : "غير نشط" }}
+  </span>
+</td>
+              <td><span class="badge text-bg-info">{{user.employeeRank}}</span>
+               </td>
+              <td class="text-center">
+                <div class="dropdown">
+                  <button class="btn btn-sm dropdown-toggle custom-btn-gold" type="button" data-bs-toggle="dropdown">
+                    الاعدادات
+                  </button>
+                  <ul class="dropdown-menu text-end shadow-sm border-0">
+
+                    <li>
+  <a class="dropdown-item py-2" 
+     href="javascript:void(0)" 
+     data-bs-toggle="modal" 
+     data-bs-target="#userRoleModal"
+     (click)="onPreparedRole(user.id)">
+    <i class="bi bi-shield-plus ms-2 text-primary"></i>اضافة صلاحية
+  </a>
+</li>
+                    <li>
+                      <a class="dropdown-item py-2" href="javascript:void(0)" (click)="onToggleStatus(user)">
+  <i class="bi" [ngClass]="user.isActive ? 'bi-person-x text-danger' : 'bi-person-check text-success'"></i>
+  <span class="ms-2">
+    {{ user.isActive ? 'تعطيل الحساب' : 'تفعيل الحساب' }}
+  </span>
+</a>
+                    </li>
+                  </ul>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+<div class="card-footer bg-white py-3 border-top">
+  <div class="d-flex justify-content-between align-items-center" dir="rtl">
+    
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-link text-decoration-none text-muted p-0 ms-3" 
+              [disabled]="MawaradUsers?.pageNumber === 1"
+              (click)="onPageChange(MawaradUsers!.pageNumber - 1)">
+        السابق
+      </button>
+
+      <div class="pagination-numbers d-flex gap-1">
+        <span class="page-num active">{{ MawaradUsers?.pageNumber }}</span>
+        
+        <span class="page-num" (click)="onPageChange(2)">2</span>
+        <span class="page-num" (click)="onPageChange(3)">3</span>
+        <span class="page-num" (click)="onPageChange(4)">4</span>
+        <span class="page-num" (click)="onPageChange(5)">5</span>
+        <span class="text-muted mx-1">...</span>
+        <span class="page-num">{{ MawaradUsers?.totalPages }}</span>
+      </div>
+
+      <button class="btn btn-link text-decoration-none text-dark p-0 me-3" 
+              [disabled]="MawaradUsers?.pageNumber === MawaradUsers?.totalPages"
+              (click)="onPageChange(MawaradUsers!.pageNumber + 1)">
+        التالي
+      </button>
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+      <div class="custom-select-wrapper">
+        <select class="form-select form-select-sm" (change)="onPageSizeChange($event)">
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+        </select>
+      </div>
+    </div>
+
   </div>
+</div>
+ 
+  </div>
+</div>
+
+
 </app-layout>
 
-<!-- Modal -->
-<div *ngIf="showModal" class="modal-overlay" (click)="showModal = false">
-  <div class="modal" (click)="$event.stopPropagation()" dir="rtl">
-    <div class="modal-header">
-      <h2>{{ isEditing ? 'تعديل مستخدم' : 'إضافة مستخدم جديد' }}</h2>
-      <button (click)="showModal = false">✕</button>
-    </div>
-    <div class="modal-body">
-      <p *ngIf="!isEditing" class="form-hint">يجب إدخال كلمة مرور للمستخدم الجديد.</p>
 
-      <!-- API Error Banner -->
-      <div *ngIf="apiError" class="error-banner">
-        <span class="material-icons">error_outline</span>
-        <span>{{ apiError }}</span>
+
+<!-- Model -->
+
+<div class="modal fade" id="userRoleModal" tabindex="-1" aria-labelledby="userRoleModalLabel" aria-hidden="true" dir="rtl">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title fw-bold" id="userRoleModalLabel">إسناد صلاحية للمستخدم</h5>
+        <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal" id="closeRoleModal"></button>
       </div>
-
-      <!-- Name -->
-      <div class="form-group">
-        <label>الاسم الكامل <span class="required-star">*</span></label>
-        <input
-          type="text"
-          [(ngModel)]="editingUser.name"
-          name="name"
-          #nameField="ngModel"
-          required
-          maxlength="100"
-          class="form-input"
-          [class.input-error]="nameField.invalid && nameField.touched"
-          placeholder="أدخل الاسم"
-        />
-        <span class="field-error" *ngIf="nameField.invalid && nameField.touched">
-          الاسم الكامل مطلوب
-        </span>
+      <div class="modal-body py-4">
+        <div class="mb-3 text-end">
+          <label class="form-label fw-semibold">قائمة الصلاحيات المتاحة:</label>
+          
+          <ng-select 
+              [items]="lookupRoles" 
+              bindLabel="displayName" 
+              bindValue="id" 
+              [(ngModel)]="selectedRoleIds"
+              [loading]="loadingRoles"
+              (scrollToEnd)="onLoadMoreRoles()"
+              [virtualScroll]="true"
+              placeholder="اختر الصلاحية أو ابحث عنها..."
+              class="custom-ng-select">
+              
+              <ng-template ng-option-tmp let-item="item">
+                  {{ item.displayName || item.name }}
+              </ng-template>
+          </ng-select>
+          
+        
+        </div>
       </div>
-
-      <!-- Email -->
-      <div class="form-group">
-        <label>البريد الإلكتروني</label>
-        <input
-          type="email"
-          [(ngModel)]="editingUser.email"
-          name="email"
-          #emailField="ngModel"
-          maxlength="100"
-          class="form-input"
-          [class.input-error]="emailField.invalid && emailField.touched"
-          placeholder="أدخل البريد الإلكتروني"
-          dir="ltr"
-        />
-        <span class="field-error" *ngIf="emailField.errors?.['email'] && emailField.touched">
-          صيغة البريد الإلكتروني غير صحيحة
-        </span>
+      <div class="modal-footer bg-light border-0">
+        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">إلغاء</button>
+        <button type="button" class="btn btn-primary px-4 custom-btn-gold" 
+                [disabled]="!selectedRoleIds"
+                (click)="onSaveUserRole()">
+          حفظ البيانات
+        </button>
       </div>
-
-      <div class="form-group">
-        <label>{{ isEditing ? 'كلمة مرور جديدة (اختياري)' : 'كلمة المرور' }} <span *ngIf="!isEditing" class="required-star">*</span></label>
-        <input
-          type="password"
-          [(ngModel)]="editingUser.password"
-          name="password"
-          minlength="6"
-          class="form-input"
-          placeholder="{{ isEditing ? 'اتركها فارغة للإبقاء على الحالية' : 'أدخل كلمة المرور' }}"
-          dir="ltr"
-        />
-      </div>
-
-      <!-- National ID -->
-      <div class="form-group">
-        <label>رقم الهوية <span class="required-star">*</span></label>
-        <input
-          type="text"
-          [(ngModel)]="editingUser.nationalId"
-          name="nationalId"
-          #nationalIdField="ngModel"
-          required
-          maxlength="10"
-          class="form-input"
-          [class.input-error]="nationalIdField.invalid && nationalIdField.touched"
-          placeholder="أدخل رقم الهوية"
-          dir="ltr"
-        />
-        <span class="field-error" *ngIf="nationalIdField.invalid && nationalIdField.touched">
-          رقم الهوية مطلوب
-        </span>
-      </div>
-
-      <!-- Job Title -->
-      <div class="form-group">
-        <label>المسمى الوظيفي</label>
-        <select
-          [(ngModel)]="editingUser.jobTitle"
-          name="jobTitle"
-          class="form-input"
-        >
-          <option [ngValue]="undefined">-- اختر المسمى الوظيفي --</option>
-          <option *ngFor="let title of jobTitles" [value]="title">{{ title }}</option>
-        </select>
-        <span class="field-hint">اختر مسمى وظيفياً من القائمة</span>
-      </div>
-
-      <!-- Role -->
-      <div class="form-group">
-        <label>الدور <span class="required-star">*</span></label>
-        <select
-          [(ngModel)]="editingUser.role"
-          name="role"
-          #roleField="ngModel"
-          required
-          class="form-input"
-          [class.input-error]="roleField.invalid && roleField.touched"
-        >
-          <option value="">-- اختر الدور --</option>
-          <option value="USER">مستخدم</option>
-          <option value="MANAGER">مدير</option>
-          <option value="ADMIN">مدير نظام</option>
-        </select>
-        <span class="field-error" *ngIf="roleField.invalid && roleField.touched">
-          الدور مطلوب
-        </span>
-      </div>
-
-      <!-- Agency -->
-      <div class="form-group">
-        <label>الجهة</label>
-        <select
-          [(ngModel)]="editingUser.agencyId"
-          name="agencyId"
-          (ngModelChange)="onAgencyChange($event)"
-          class="form-input"
-        >
-          <option [ngValue]="undefined">-- اختر الجهة --</option>
-          <option *ngFor="let agency of agencies" [ngValue]="agency.id">{{ agency.name }}</option>
-        </select>
-      </div>
-
-      <!-- Department (disabled until Agency selected) -->
-      <div class="form-group">
-        <label>الإدارة</label>
-        <select
-          [(ngModel)]="editingUser.departmentId"
-          name="departmentId"
-          (ngModelChange)="onDepartmentChange($event)"
-          class="form-input"
-          [disabled]="!editingUser.agencyId || departments.length === 0"
-        >
-          <option [ngValue]="undefined">-- اختر الإدارة --</option>
-          <option *ngFor="let dept of departments" [ngValue]="dept.id">{{ dept.name }}</option>
-        </select>
-        <span class="field-hint" *ngIf="!editingUser.agencyId">
-          اختر الجهة أولاً لتفعيل هذا الحقل
-        </span>
-      </div>
-
-      <!-- Section (disabled until Department selected) -->
-      <div class="form-group">
-        <label>القسم</label>
-        <select
-          [(ngModel)]="editingUser.sectionId"
-          (ngModelChange)="onSectionChange($event)"
-          name="sectionId"
-          class="form-input"
-          [disabled]="!editingUser.departmentId || sections.length === 0"
-        >
-          <option [ngValue]="undefined">-- اختر القسم --</option>
-          <option *ngFor="let section of sections" [ngValue]="section.id">{{ section.name }}</option>
-        </select>
-        <span class="field-hint" *ngIf="!editingUser.departmentId">
-          اختر الإدارة أولاً لتفعيل هذا الحقل
-        </span>
-      </div>
-
-    </div>
-    <div class="modal-footer">
-      <button type="button" class="btn-secondary" (click)="showModal = false">إلغاء</button>
-      <button
-        class="btn-primary"
-        (click)="save()"
-        [disabled]="saving || !isFormValid()"
-      >
-        {{ saving ? 'جاري الحفظ...' : 'حفظ' }}
-      </button>
     </div>
   </div>
 </div>

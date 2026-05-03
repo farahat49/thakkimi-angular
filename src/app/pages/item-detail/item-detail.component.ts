@@ -64,6 +64,7 @@ export class ItemDetailComponent implements OnInit {
   loadItem(id: number) {
     this.itemsService.getItem(id).subscribe({
       next: (item) => {
+        
         this.item = item;
         this.loading = false;
         this.cdr.detectChanges();

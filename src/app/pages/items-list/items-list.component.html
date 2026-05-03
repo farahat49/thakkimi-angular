@@ -10,7 +10,7 @@
     </button>
   </ng-container>
 
-  <div class="list-content">
+  <div class="list-content"> 
     <!-- Filters -->
     <div class="filters-bar">
       <div class="search-wrapper">
@@ -86,7 +86,7 @@
 </app-layout>
 
 <!-- Create Modal -->
-<div *ngIf="showCreateModal" class="modal-overlay" (click)="showCreateModal = false">
+<!-- <div *ngIf="showCreateModal" class="modal-overlay" (click)="showCreateModal = false">
   <div class="modal" (click)="$event.stopPropagation()" dir="rtl">
     <div class="modal-header">
       <h2>إضافة مهمة / لجنة جديدة</h2>
@@ -157,19 +157,19 @@
         ></textarea>
       </div>
 
-      <!-- <div class="form-group">
+      <div class="form-group">
         <label>الأعضاء</label>
         <div class="users-checkboxes">
-          <label *ngFor="let user of users" class="user-checkbox">
+          <label *ngFor="let user of employee" class="user-checkbox">
             <input
               type="checkbox"
-              [checked]="newItem.memberIds.includes(user.id)"
-              (change)="toggleMember(user.id)"
+              [checked]="newItem.memberIds.includes(+user.identityNumber)"
+              (change)="toggleMember(+user.identityNumber)"
             />
-            {{ user.name }}
+            {{ user.fullName }}
           </label>
         </div>
-      </div> -->
+      </div>
 
       <div class="form-group">
         <label>المكلفون</label>
@@ -177,8 +177,8 @@
           <label *ngFor="let user of employee" class="user-checkbox">
             <input
               type="checkbox"
-              [checked]="newItem.assigneeIds.includes(user.id)"
-              (change)="toggleAssignee(user.id)"
+              [checked]="newItem.assigneeIds.includes(+user.identityNumber)"
+              (change)="toggleAssignee(+user.identityNumber)"
             />
             {{ user.fullName }}
           </label>
@@ -193,6 +193,106 @@
       </button>
     </div>
   </div>
+</div> -->
+
+
+<button type="button" class="btn-primary" (click)="showCreateModal = true">
+  <span class="material-icons">add</span>
+  إضافة جديد
+</button>
+
+<div *ngIf="showCreateModal" class="modal-overlay" (click)="showCreateModal = false">
+  <div class="modal-container" (click)="$event.stopPropagation()" dir="rtl">
+    
+    <div class="modal-header">
+      <h2>إضافة مهمة / لجنة جديدة</h2>
+      <button class="close-btn" (click)="showCreateModal = false">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div *ngIf="createError" class="error-banner">{{ createError }}</div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label>النوع</label>
+          <select [(ngModel)]="newItem.type" class="form-input">
+            <option value="TASK">مهمة</option>
+            <option value="COMMITTEE">لجنة</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>الأهمية</label>
+          <select [(ngModel)]="newItem.importance" class="form-input">
+            <option value="NORMAL">عادي</option>
+            <option value="SECRET">سري</option>
+          </select>
+        </div>
+      </div>
+
+      <div *ngIf="newItem.type === 'COMMITTEE'" class="form-group">
+        <label>نوع اللجنة</label>
+        <select [(ngModel)]="newItem.committeeType" class="form-input">
+          <option value="INTERNAL">داخلية</option>
+          <option value="EXTERNAL">خارجية</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>العنوان *</label>
+        <input type="text" [(ngModel)]="newItem.title" class="form-input" placeholder="أدخل العنوان" />
+      </div>
+
+      <div class="form-group">
+        <label>الوصف</label>
+        <textarea [(ngModel)]="newItem.description" class="form-input" rows="2" placeholder="أدخل الوصف"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>تاريخ الاستحقاق *</label>
+        <input type="date" [(ngModel)]="newItem.dueDate" class="form-input" />
+      </div>
+
+      <div *ngIf="newItem.type === 'COMMITTEE'" class="form-group">
+        <label>أعضاء اللجنة (رقم هوية)</label>
+        <textarea [(ngModel)]="memberNationalIdsText" class="form-input" rows="2" dir="ltr"></textarea>
+      </div>
+
+   <div class="form-group">
+        <label>الأعضاء</label>
+        <div class="users-checkboxes">
+          <label *ngFor="let user of employee" class="user-checkbox">
+            <input
+              type="checkbox"
+              [checked]="newItem.memberIds.includes(+user.identityNumber)"
+              (change)="toggleMember(+user.identityNumber)"
+            />
+            {{ user.fullName }}
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>المكلفون</label>
+        <div class="users-checkboxes">
+          <label *ngFor="let user of employee" class="user-checkbox">
+            <input
+              type="checkbox"
+              [checked]="newItem.assigneeIds.includes(+user.identityNumber)"
+              (change)="toggleAssignee(+user.identityNumber)"
+            />
+            {{ user.fullName }}
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary" (click)="showCreateModal = false">إلغاء</button>
+      <button type="button" class="btn-primary" (click)="createItem()" [disabled]="creating || !newItem.title.trim() || !newItem.dueDate">
+        <span *ngIf="!creating">إضافة</span>
+        <span *ngIf="creating">جاري الإضافة...</span>
+      </button>
+    </div>
+
+  </div>
 </div>
-
-

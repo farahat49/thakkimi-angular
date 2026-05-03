@@ -15,6 +15,10 @@ export interface User {
   sectionName?: string;
 }
 
+
+
+
+
 export interface LoginRequest {
   email: string;
   password: string;

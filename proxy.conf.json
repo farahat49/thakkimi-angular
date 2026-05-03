@@ -3,11 +3,6 @@
     "target": "http://localhost:5059",
     "secure": false,
     "changeOrigin": true
-  },
-"/Administration/**": {
-    "target": "https://localhost:44342",
-    "secure": false,
-    "changeOrigin": true,
-    "logLevel": "debug"
   }
+
 }
