@@ -88,14 +88,15 @@
       </button>
 
       <div class="pagination-numbers d-flex gap-1">
-        <span class="page-num active">{{ roles?.pageNumber }}</span>
-        
-        <span class="page-num" (click)="onPageChange(2)">2</span>
-        <span class="page-num" (click)="onPageChange(3)">3</span>
-        <span class="page-num" (click)="onPageChange(4)">4</span>
-        <span class="page-num" (click)="onPageChange(5)">5</span>
-        <span class="text-muted mx-1">...</span>
-        <span class="page-num">{{ roles?.totalPages }}</span>
+        @for (page of getPageNumbers(); track page) {
+          @if (page < 0) {
+            <span class="text-muted mx-1">...</span>
+          } @else {
+            <span class="page-num" 
+                  [class.active]="page === roles?.pageNumber"
+                  (click)="onPageChange(page)">{{ page }}</span>
+          }
+        }
       </div>
 
       <button class="btn btn-link text-decoration-none text-dark p-0 me-3" 

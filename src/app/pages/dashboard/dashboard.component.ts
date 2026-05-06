@@ -1,12 +1,16 @@
 import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { LayoutComponent } from '../../components/layout/layout.component';
 import { ItemsService } from '../../services/items.service';
 import { UsersService } from '../../services/users.service';
 import { AuthService } from '../../services/auth.service';
 import { Item } from '../../models/item.model';
 import { User } from '../../models/user.model';
+import { EmployeeHierarchyResponse } from '../../models/Employee.model';
+import { catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -22,6 +26,12 @@ export class DashboardComponent implements OnInit {
   loading = true;
   expandedUser: number | null = null;
 
+  readonly PAGE_SIZE = 8;
+  userStatsPage = 1;
+  deptStatsPage = 1;
+  private _userStats: any[] = [];
+  private _deptStats: any[] = [];
+
   constructor(
     private itemsService: ItemsService,
     private usersService: UsersService,
@@ -35,29 +45,111 @@ export class DashboardComponent implements OnInit {
 
   loadData() {
     this.loading = true;
-    this.itemsService.getItems().subscribe({
-      next: (items) => {
-        this.items = [...items];
-        this.loading = false;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Items API error:', err);
-        this.loading = false;
-        this.cdr.detectChanges();
-      }
-    });
+    const managerId = localStorage.getItem('UserIdentity') ?? '';
 
-    if (this.authService.isAdminOrManager()) {
-      const usersRequest = this.authService.isAdmin() ? this.usersService.getUsers() : this.usersService.getScopedUsers();
-      usersRequest.subscribe({
-        next: (users) => {
-          this.users = [...users];
+    if ((this.authService.isAdmin() || this.authService.isManager()) && managerId) {
+      // Admin or Manager with a Mawared national ID → use hierarchy-scoped view
+      const hierarchyReq = this.usersService.getManagedHierarchyEmployees(managerId).pipe(
+        catchError(() => of({ data: [], pageIndex: 0, pageSize: 0, totalCount: 0 } as EmployeeHierarchyResponse))
+      );
+      forkJoin({
+        items: this.itemsService.getItems({ pageSize: 500 }),
+        hierarchy: hierarchyReq
+      }).subscribe({
+        next: ({ items, hierarchy }) => {
+          const employees = hierarchy.data ?? [];
+          this.users = employees
+            .filter(e => e.localUserId != null)
+            .map(e => ({
+              id: e.localUserId!,
+              name: e.fullName,
+              email: e.workEmail ?? '',
+              nationalId: e.identityNumber,
+              role: 'USER' as const
+            }));
+          const hierarchyUserIds = new Set<number>(this.users.map(u => u.id));
+          this.items = hierarchyUserIds.size > 0
+            ? items.filter(item =>
+                hierarchyUserIds.has(item.mawaradCreatedBy) ||
+                item.assigneeIds.some(id => hierarchyUserIds.has(id)) ||
+                item.memberIds.some(id => hierarchyUserIds.has(id))
+              )
+            : [...items];
+          this.loading = false;
+          this._computeStats();
           this.cdr.detectChanges();
         },
-        error: (err) => { console.error('Users API error:', err); }
+        error: (err) => {
+          console.error('Dashboard load error:', err);
+          this.loading = false;
+          this.cdr.detectChanges();
+        }
+      });
+    } else if (this.authService.isAdmin()) {
+      // Admin without a national ID → full admin view showing all users
+      forkJoin({ items: this.itemsService.getItems({ pageSize: 500 }), users: this.usersService.getUsers() }).subscribe({
+        next: ({ items, users }) => {
+          this.items = [...items];
+          this.users = [...users];
+          this.loading = false;
+          this._computeStats();
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Dashboard load error:', err);
+          this.loading = false;
+          this.cdr.detectChanges();
+        }
+      });
+    } else {
+      this.itemsService.getItems({ pageSize: 500 }).subscribe({
+        next: (items) => {
+          this.items = [...items];
+          this.loading = false;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Items API error:', err);
+          this.loading = false;
+          this.cdr.detectChanges();
+        }
       });
     }
+  }
+
+  private _computeStats() {
+    this._userStats = this.getUserStats();
+    this._deptStats = this.getDepartmentStats();
+    this.userStatsPage = 1;
+    this.deptStatsPage = 1;
+  }
+
+  get pagedUserStats() {
+    const start = (this.userStatsPage - 1) * this.PAGE_SIZE;
+    return this._userStats.slice(start, start + this.PAGE_SIZE);
+  }
+
+  get userStatsTotalPages() {
+    return Math.ceil(this._userStats.length / this.PAGE_SIZE);
+  }
+
+  get pagedDeptStats() {
+    const start = (this.deptStatsPage - 1) * this.PAGE_SIZE;
+    return this._deptStats.slice(start, start + this.PAGE_SIZE);
+  }
+
+  get deptStatsTotalPages() {
+    return Math.ceil(this._deptStats.length / this.PAGE_SIZE);
+  }
+
+  setUserStatsPage(p: number) {
+    this.userStatsPage = p;
+    this.cdr.detectChanges();
+  }
+
+  setDeptStatsPage(p: number) {
+    this.deptStatsPage = p;
+    this.cdr.detectChanges();
   }
 
   get totalItems() { return this.items.length; }

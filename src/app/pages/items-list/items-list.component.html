@@ -4,7 +4,7 @@
       <span class="material-icons">download</span>
       {{ exporting ? 'جاري التصدير...' : 'تصدير Excel' }}
     </button>
-    <button *ngIf="canCreate" type="button" class="btn-primary" (click)="showCreateModal = true">
+    <button *ngIf="canCreate" type="button" class="btn-primary" (click)="openCreateModal()">
       <span class="material-icons">add</span>
       إضافة جديد
     </button>
@@ -29,22 +29,7 @@
         <option value="COMMITTEE">لجان</option>
       </select>
 
-      <ng-container *ngIf="authService.isAdminOrManager()">
-        <select [(ngModel)]="selectedAgencyId" (ngModelChange)="onAgencyFilterChange()" class="filter-select">
-          <option [ngValue]="undefined">كل الوكالات</option>
-          <option *ngFor="let agency of agencies" [ngValue]="agency.id">{{ agency.name }}</option>
-        </select>
 
-        <select [(ngModel)]="selectedDepartmentId" (ngModelChange)="onDepartmentFilterChange()" class="filter-select">
-          <option [ngValue]="undefined">كل الإدارات</option>
-          <option *ngFor="let department of departments" [ngValue]="department.id">{{ department.name }}</option>
-        </select>
-
-        <select [(ngModel)]="selectedSectionId" (ngModelChange)="loadData()" class="filter-select">
-          <option [ngValue]="undefined">كل الشعب</option>
-          <option *ngFor="let section of sections" [ngValue]="section.id">{{ section.name }}</option>
-        </select>
-      </ng-container>
     </div>
 
     <!-- Loading -->
@@ -196,7 +181,7 @@
 </div> -->
 
 
-<button type="button" class="btn-primary" (click)="showCreateModal = true">
+<button type="button" class="btn-primary" (click)="openCreateModal()">
   <span class="material-icons">add</span>
   إضافة جديد
 </button>
@@ -253,13 +238,53 @@
       </div>
 
       <div *ngIf="newItem.type === 'COMMITTEE'" class="form-group">
-        <label>أعضاء اللجنة (رقم هوية)</label>
-        <textarea [(ngModel)]="memberNationalIdsText" class="form-input" rows="2" dir="ltr"></textarea>
+        <label>إضافة أعضاء للجنة</label>
+        <div class="committee-search-wrapper">
+          <input
+            type="text"
+            class="form-input"
+            placeholder="ابحث بالاسم أو رقم الهوية..."
+            [(ngModel)]="committeeSearchQuery"
+            (input)="onCommitteeSearch()"
+            (blur)="committeeSearchResults = []"
+            autocomplete="off"
+          />
+          <div class="committee-search-results" *ngIf="committeeSearchLoading">
+            <div class="committee-search-item">
+              <span class="csr-name" style="color:#6b7280">جاري البحث...</span>
+            </div>
+          </div>
+          <div class="committee-search-results" *ngIf="!committeeSearchLoading && committeeSearchResults.length > 0">
+            <div
+              class="committee-search-item"
+              *ngFor="let emp of committeeSearchResults"
+              (mousedown)="addToCommitteeList(emp)"
+            >
+              <span class="csr-name">{{ emp.fullName }}</span>
+              <span class="csr-id">{{ emp.identityNumber }}</span>
+            </div>
+          </div>
+          <div class="committee-search-results" *ngIf="committeeCanAddByNationalId">
+            <div class="committee-search-item fallback" (mousedown)="addByNationalId()">
+              <span class="csr-name">إضافة برقم الهوية</span>
+              <span class="csr-id">{{ committeeSearchQuery.trim() }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="committee-selected" *ngIf="committeeSearchSelected.length > 0">
+          <span class="committee-chip" *ngFor="let emp of committeeSearchSelected">
+            {{ emp.fullName }}
+            <button type="button" class="chip-remove" (click)="removeFromCommitteeList(emp)">✕</button>
+          </span>
+        </div>
       </div>
 
-   <div class="form-group">
-        <label>الأعضاء</label>
-        <div class="users-checkboxes">
+      <div class="form-group">
+        <button type="button" class="collapsible-header" (click)="membersExpanded = !membersExpanded">
+          <span>الأعضاء ({{ newItem.memberIds.length }}/{{ employee.length }})</span>
+          <span class="material-icons">{{ membersExpanded ? 'expand_less' : 'expand_more' }}</span>
+        </button>
+        <div class="users-checkboxes" *ngIf="membersExpanded">
           <label *ngFor="let user of employee" class="user-checkbox">
             <input
               type="checkbox"

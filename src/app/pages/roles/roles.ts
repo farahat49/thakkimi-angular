@@ -135,7 +135,24 @@ onSubmitRole()
 
   
 
-onDeleteRole(item: any) {
+getPageNumbers(): number[] {
+    if (!this.roles) return [];
+    const total = this.roles.totalPages;
+    const current = this.roles.pageNumber;
+
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+
+    const pages: number[] = [1];
+    if (current > 3) pages.push(-1);
+    const start = Math.max(2, current - 1);
+    const end = Math.min(total - 1, current + 1);
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (current < total - 2) pages.push(-2);
+    pages.push(total);
+    return pages;
+  }
+
+  onDeleteRole(item: any) {
   console.log(item);
   
   ConfirmDialog(

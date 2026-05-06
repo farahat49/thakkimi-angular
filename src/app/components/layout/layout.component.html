@@ -29,14 +29,16 @@
       <div *ngIf="isAdmin || isManager" class="nav-divider"></div>
       <div *ngIf="isAdmin || isManager" class="nav-section-label">الإدارة</div>
 
-      <a *ngFor="let item of managerNavItems"
-         [routerLink]="item.path"
-         routerLinkActive="active"
-         class="nav-item"
-         (click)="sidebarOpen = false">
-        <span class="material-icons nav-icon">{{ item.icon }}</span>
-        <span>{{ item.label }}</span>
-      </a>
+      <ng-container *ngIf="isManager">
+        <a *ngFor="let item of managerNavItems"
+           [routerLink]="item.path"
+           routerLinkActive="active"
+           class="nav-item"
+           (click)="sidebarOpen = false">
+          <span class="material-icons nav-icon">{{ item.icon }}</span>
+          <span>{{ item.label }}</span>
+        </a>
+      </ng-container>
 
       <ng-container *ngIf="isAdmin">
         <a *ngFor="let item of adminNavItems"

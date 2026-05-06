@@ -12,9 +12,11 @@ export class ItemsService {
 
   constructor(private http: HttpClient) {}
 
-  getItems(filters?: { status?: string; type?: string; search?: string; agencyId?: number; departmentId?: number; sectionId?: number }): Observable<Item[]> {
+  getItems(filters?: { status?: string; type?: string; search?: string; agencyId?: number; departmentId?: number; sectionId?: number; page?: number; pageSize?: number }): Observable<Item[]> {
     let params = new HttpParams();
 
+    if (filters?.page) params = params.set('page', filters.page);
+    if (filters?.pageSize) params = params.set('pageSize', filters.pageSize);
     if (filters?.status) params = params.set('status', filters.status);
     if (filters?.type) params = params.set('type', filters.type);
     if (filters?.search) params = params.set('search', filters.search);
@@ -43,6 +45,10 @@ export class ItemsService {
 
   completeItem(id: number): Observable<Item> {
     return this.http.patch<Item>(`${this.apiUrl}/items/${id}/complete`, {});
+  }
+
+  reopenItem(id: number): Observable<Item> {
+    return this.http.patch<Item>(`${this.apiUrl}/items/${id}/reopen`, {});
   }
 
   exportItems(filters?: { status?: string; type?: string; search?: string; agencyId?: number; departmentId?: number; sectionId?: number }): Observable<Blob> {

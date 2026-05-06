@@ -39,7 +39,7 @@
     <div *ngIf="!loading && authService.isAdminOrManager() && users.length > 0" class="section">
       <h2 class="section-title">إحصائيات الإدارات</h2>
       <div class="users-stats">
-        <div *ngFor="let stat of getDepartmentStats()" class="user-stat-card">
+        <div *ngFor="let stat of pagedDeptStats" class="user-stat-card">
           <div class="user-stat-header">
             <div class="user-avatar">{{ stat.name.charAt(0) }}</div>
             <div class="user-info">
@@ -54,12 +54,21 @@
           </div>
         </div>
       </div>
+      <div class="pagination" *ngIf="deptStatsTotalPages > 1">
+        <button class="page-btn" (click)="setDeptStatsPage(deptStatsPage - 1)" [disabled]="deptStatsPage === 1">
+          <span class="material-icons">navigate_next</span>
+        </button>
+        <span class="page-info">{{ deptStatsPage }} / {{ deptStatsTotalPages }}</span>
+        <button class="page-btn" (click)="setDeptStatsPage(deptStatsPage + 1)" [disabled]="deptStatsPage === deptStatsTotalPages">
+          <span class="material-icons">navigate_before</span>
+        </button>
+      </div>
     </div>
 
     <div *ngIf="!loading && authService.isAdminOrManager() && users.length > 0" class="section">
       <h2 class="section-title">إحصائيات المستخدمين</h2>
       <div class="users-stats">
-        <div *ngFor="let stat of getUserStats()" class="user-stat-card">
+        <div *ngFor="let stat of pagedUserStats" class="user-stat-card">
           <div class="user-stat-header" (click)="toggleUser(stat.user.id)">
             <div class="user-avatar">{{ stat.user.name.charAt(0) }}</div>
             <div class="user-info">
@@ -89,6 +98,15 @@
             </a>
           </div>
         </div>
+      </div>
+      <div class="pagination" *ngIf="userStatsTotalPages > 1">
+        <button class="page-btn" (click)="setUserStatsPage(userStatsPage - 1)" [disabled]="userStatsPage === 1">
+          <span class="material-icons">navigate_next</span>
+        </button>
+        <span class="page-info">{{ userStatsPage }} / {{ userStatsTotalPages }}</span>
+        <button class="page-btn" (click)="setUserStatsPage(userStatsPage + 1)" [disabled]="userStatsPage === userStatsTotalPages">
+          <span class="material-icons">navigate_before</span>
+        </button>
       </div>
     </div>
   </div>

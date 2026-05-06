@@ -24,6 +24,15 @@
       <span class="material-icons">check_circle</span>
       {{ completing ? "جاري..." : "إكمال" }}
     </button>
+    <button
+      *ngIf="authService.isAdmin() && item?.status === 'COMPLETED'"
+      class="page-action neutral"
+      (click)="reopenItem()"
+      [disabled]="reopening"
+    >
+      <span class="material-icons">replay</span>
+      {{ reopening ? "جاري..." : "إعادة فتح" }}
+    </button>
   </ng-container>
 
   <div *ngIf="loading" class="loading-state">

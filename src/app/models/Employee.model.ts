@@ -22,4 +22,5 @@ export interface Employee {
   firstNameEn: string;
   lastNameEn: string;
   identityNumber: string;
+  localUserId?: number | null;
 }

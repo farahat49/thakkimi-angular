@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from "@angular/core";
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { RouterModule, ActivatedRoute, Router } from "@angular/router";
@@ -22,7 +22,7 @@ import { User } from "../../models/user.model";
   templateUrl: "./item-detail.component.html",
   styleUrls: ["./item-detail.component.scss"],
 })
-export class ItemDetailComponent implements OnInit {
+export class ItemDetailComponent implements OnInit, OnDestroy {
   item: Item | null = null;
   messages: ChatMessage[] = [];
   auditEvents: ItemAuditEvent[] = [];
@@ -32,9 +32,13 @@ export class ItemDetailComponent implements OnInit {
   selectedAttachment: File | null = null;
   sending = false;
   completing = false;
+  reopening = false;
   deleting = false;
   activeTab: "details" | "chat" | "members" | "activity" = "details";
   chatMarkedRead = false;
+
+  private pollInterval: ReturnType<typeof setInterval> | null = null;
+  private readonly POLL_MS = 5000;
 
   showEditModal = false;
   saving = false;
@@ -61,15 +65,40 @@ export class ItemDetailComponent implements OnInit {
     this.loadUsers();
   }
 
+  ngOnDestroy() {
+    this.stopPolling();
+  }
+
+  private startPolling() {
+    if (this.pollInterval) return;
+    this.pollInterval = setInterval(() => {
+      if (this.item && this.activeTab === "chat") {
+        this.itemsService.getMessages(this.item.id).subscribe({
+          next: (msgs) => {
+            if (msgs.length !== this.messages.length) {
+              this.messages = [...msgs];
+              this.cdr.detectChanges();
+            }
+          },
+          error: () => {},
+        });
+      }
+    }, this.POLL_MS);
+  }
+
+  private stopPolling() {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = null;
+    }
+  }
+
   loadItem(id: number) {
     this.itemsService.getItem(id).subscribe({
       next: (item) => {
-        
         this.item = item;
         this.loading = false;
         this.cdr.detectChanges();
-        this.loadMessages(id);
-        this.loadAudit(id);
       },
       error: () => {
         this.loading = false;
@@ -111,20 +140,25 @@ export class ItemDetailComponent implements OnInit {
 
   setActiveTab(tab: "details" | "chat" | "members" | "activity") {
     this.activeTab = tab;
-    if (tab === "chat" && this.item && !this.chatMarkedRead) {
-      this.itemsService.markMessagesRead(this.item.id).subscribe({
-        next: () => {
-          this.chatMarkedRead = true;
-          if (this.item) {
-            this.item = {
-              ...this.item,
-              unreadCount: 0,
-              hasUnreadUpdates: false,
-            };
-          }
-          this.cdr.detectChanges();
-        },
-      });
+    if (tab === "chat") {
+      this.startPolling();
+      if (this.item && !this.chatMarkedRead) {
+        this.itemsService.markMessagesRead(this.item.id).subscribe({
+          next: () => {
+            this.chatMarkedRead = true;
+            if (this.item) {
+              this.item = {
+                ...this.item,
+                unreadCount: 0,
+                hasUnreadUpdates: false,
+              };
+            }
+            this.cdr.detectChanges();
+          },
+        });
+      }
+    } else {
+      this.stopPolling();
     }
   }
 
@@ -321,6 +355,23 @@ export class ItemDetailComponent implements OnInit {
     });
   }
 
+  reopenItem() {
+    if (!this.item) return;
+    this.reopening = true;
+    this.itemsService.reopenItem(this.item.id).subscribe({
+      next: (updated) => {
+        this.item = updated;
+        this.reopening = false;
+        this.loadAudit(updated.id);
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.reopening = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
   deleteItem() {
     if (!this.item || !confirm("هل أنت متأكد من الحذف؟")) return;
     this.deleting = true;
@@ -368,6 +419,9 @@ export class ItemDetailComponent implements OnInit {
   }
 
   get canComplete(): boolean {
-    return this.item?.status !== "COMPLETED" && this.canManage;
+    if (this.item?.status === "COMPLETED") return false;
+    if (this.canManage) return true;
+    const currentId = this.authService.currentUser?.id;
+    return currentId != null && (this.item?.assigneeIds?.includes(currentId) ?? false);
   }
 }

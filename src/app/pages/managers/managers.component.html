@@ -6,11 +6,11 @@
 
   <div *ngIf="!loading" class="managers-content">
     <div *ngFor="let stat of getUserStats()" class="manager-card">
-      <div class="manager-header" (click)="toggleUser(stat.user.id)">
-        <div class="manager-avatar">{{ stat.user.name.charAt(0) }}</div>
+      <div class="manager-header" (click)="toggleUser(stat.employee.localUserId!)">
+        <div class="manager-avatar">{{ stat.employee.fullName.charAt(0) }}</div>
         <div class="manager-info">
-          <h3 class="manager-name">{{ stat.user.name }}</h3>
-          <p class="manager-email">{{ stat.user.email }}</p>
+          <h3 class="manager-name">{{ stat.employee.fullName }}</h3>
+          <p class="manager-email">{{ stat.employee.workEmail }}</p>
         </div>
         <div class="manager-stats">
           <div class="stat-item">
@@ -29,7 +29,7 @@
         <div class="rate-badge" [class]="stat.rate >= 70 ? 'high' : stat.rate >= 40 ? 'medium' : 'low'">
           {{ stat.rate }}%
         </div>
-        <span class="material-icons expand-icon" [class.rotated]="expandedUser === stat.user.id">
+        <span class="material-icons expand-icon" [class.rotated]="expandedUser === stat.employee.localUserId">
           expand_more
         </span>
       </div>
@@ -40,7 +40,7 @@
       </div>
 
       <!-- Expanded Items -->
-      <div *ngIf="expandedUser === stat.user.id" class="expanded-items">
+      <div *ngIf="expandedUser === stat.employee.localUserId" class="expanded-items">
         <div *ngIf="stat.items.length === 0" class="no-items">
           لا توجد مهام مكلفة لهذا الموظف
         </div>

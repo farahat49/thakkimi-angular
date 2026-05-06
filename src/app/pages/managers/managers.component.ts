@@ -5,7 +5,7 @@ import { LayoutComponent } from '../../components/layout/layout.component';
 import { ItemsService } from '../../services/items.service';
 import { UsersService } from '../../services/users.service';
 import { Item } from '../../models/item.model';
-import { User } from '../../models/user.model';
+import { Employee } from '../../models/Employee.model';
 
 @Component({
   selector: 'app-managers',
@@ -16,7 +16,7 @@ import { User } from '../../models/user.model';
 })
 export class ManagersComponent implements OnInit {
   items: Item[] = [];
-  users: User[] = [];
+  employees: Employee[] = [];
   loading = true;
   expandedUser: number | null = null;
 
@@ -42,9 +42,10 @@ export class ManagersComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
-    this.usersService.getScopedUsers().subscribe({
-      next: (users) => {
-        this.users = [...users];
+    const managerId = localStorage.getItem('UserIdentity') ?? '';
+    this.usersService.getManagedHierarchyEmployees(managerId).subscribe({
+      next: (response) => {
+        this.employees = response.data ?? [];
         this.cdr.detectChanges();
       },
       error: () => {}
@@ -52,14 +53,22 @@ export class ManagersComponent implements OnInit {
   }
 
   getUserStats() {
-    return this.users.map(user => {
-      const assigned = this.items.filter(i => i.assigneeIds?.includes(user.id));
-      const completed = assigned.filter(i => i.status === 'COMPLETED');
-      const overdue = assigned.filter(i => i.status === 'OVERDUE');
-      const todo = assigned.filter(i => i.status === 'ACTIVE');
-      const rate = assigned.length > 0 ? Math.round((completed.length / assigned.length) * 100) : 0;
-      return { user, total: assigned.length, completed: completed.length, overdue: overdue.length, active: todo.length, rate, items: assigned };
-    }).sort((a, b) => b.total - a.total);
+    return this.employees
+      .filter(e => e.localUserId != null)
+      .map(employee => {
+        const localId = employee.localUserId!;
+        const assigned = this.items.filter(i =>
+          i.assigneeIds?.includes(localId) ||
+          i.memberIds?.includes(localId) ||
+          i.mawaradCreatedBy === localId
+        );
+        const completed = assigned.filter(i => i.status === 'COMPLETED');
+        const overdue = assigned.filter(i => i.status === 'OVERDUE');
+        const active = assigned.filter(i => i.status === 'ACTIVE');
+        const rate = assigned.length > 0 ? Math.round((completed.length / assigned.length) * 100) : 0;
+        return { employee, total: assigned.length, completed: completed.length, overdue: overdue.length, active: active.length, rate, items: assigned };
+      })
+      .sort((a, b) => b.total - a.total);
   }
 
   toggleUser(userId: number) {

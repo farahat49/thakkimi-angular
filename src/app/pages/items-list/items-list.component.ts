@@ -3,16 +3,12 @@ import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { HttpErrorResponse } from "@angular/common/http";
 import { RouterModule, ActivatedRoute } from "@angular/router";
+import { Subject, debounceTime, distinctUntilChanged } from "rxjs";
 import { LayoutComponent } from "../../components/layout/layout.component";
 import { ItemsService } from "../../services/items.service";
 import { UsersService } from "../../services/users.service";
 import { AuthService } from "../../services/auth.service";
-import {
-  OrganizationService,
-  Agency,
-  Department,
-  Section,
-} from "../../services/organization.service";
+
 import { Item, CreateItemRequest, ItemStatus } from "../../models/item.model";
 import { User } from "../../models/user.model";
 import { Employee, EmployeeHierarchyResponse } from "../../models/Employee.model";
@@ -28,16 +24,10 @@ export class ItemsListComponent implements OnInit {
   items: Item[] = [];
   filteredItems: Item[] = [];
   users: User[] = [];
-  agencies: Agency[] = [];
-  departments: Department[] = [];
-  sections: Section[] = [];
   loading = true;
   status: ItemStatus = "ACTIVE";
   searchQuery = "";
   filterType = "";
-  selectedAgencyId?: number;
-  selectedDepartmentId?: number;
-  selectedSectionId?: number;
   showCreateModal = false;
   creating = false;
   exporting = false;
@@ -65,11 +55,17 @@ export class ItemsListComponent implements OnInit {
   };
 
 
-  employee:Employee[] = [];
+  employee: Employee[] = [];
+  membersExpanded = false;
+  committeeSearchQuery = '';
+  committeeSearchResults: { fullName: string; identityNumber: string }[] = [];
+  committeeSearchSelected: { fullName: string; identityNumber: string }[] = [];
+  committeeSearchLoading = false;
+  private committeeSearch$ = new Subject<string>();
+
   constructor(
     private itemsService: ItemsService,
     private usersService: UsersService,
-    private orgService: OrganizationService,
     public authService: AuthService,
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
@@ -78,11 +74,13 @@ export class ItemsListComponent implements OnInit {
   ngOnInit(): void {
     this.route.data.subscribe((data) => {
       this.status = data["status"] || "ACTIVE";
-      this.loadFilterData();
       this.loadAssignableUsers();
       this.loadData();
-
       this.loadHierarchy();
+    });
+
+    this.committeeSearch$.pipe(debounceTime(300), distinctUntilChanged()).subscribe(q => {
+      this.searchCommitteeUsers(q);
     });
   }
 
@@ -104,18 +102,6 @@ export class ItemsListComponent implements OnInit {
 
 
 
-  loadFilterData(): void {
-    if (!this.authService.isAdminOrManager()) return;
-
-    this.orgService.getAgencies().subscribe({
-      next: (agencies) => {
-        this.agencies = agencies;
-        this.cdr.detectChanges();
-      },
-      error: () => {},
-    });
-  }
-
   loadAssignableUsers(): void {
     if (!this.authService.isAdminOrManager()) {
       this.users = [];
@@ -134,56 +120,11 @@ export class ItemsListComponent implements OnInit {
     });
   }
 
-  onAgencyFilterChange(): void {
-    this.selectedDepartmentId = undefined;
-    this.selectedSectionId = undefined;
-    this.sections = [];
-
-    if (!this.selectedAgencyId) {
-      this.departments = [];
-      this.loadData();
-      return;
-    }
-
-    this.orgService.getDepartmentsByAgency(this.selectedAgencyId).subscribe({
-      next: (departments) => {
-        this.departments = departments;
-        this.loadData();
-        this.cdr.detectChanges();
-      },
-      error: () => this.loadData(),
-    });
-  }
-
-  onDepartmentFilterChange(): void {
-    this.selectedSectionId = undefined;
-
-    if (!this.selectedDepartmentId) {
-      this.sections = [];
-      this.loadData();
-      return;
-    }
-
-    this.orgService
-      .getSectionsByDepartment(this.selectedDepartmentId)
-      .subscribe({
-        next: (sections) => {
-          this.sections = sections;
-          this.loadData();
-          this.cdr.detectChanges();
-        },
-        error: () => this.loadData(),
-      });
-  }
-
   loadData(): void {
     this.loading = true;
     this.itemsService
       .getItems({
         status: this.status,
-        agencyId: this.selectedAgencyId,
-        departmentId: this.selectedDepartmentId,
-        sectionId: this.selectedSectionId,
       })
       .subscribe({
         next: (items) => {
@@ -226,31 +167,12 @@ export class ItemsListComponent implements OnInit {
 
     this.createError = null;
 
-    const memberNationalIdsResult = this.collectNationalIds(
-      this.memberNationalIdsText,
-    );
-    const assigneeNationalIdsResult = this.collectNationalIds(
-      this.assigneeNationalIdsText,
-    );
-
-    if (memberNationalIdsResult.invalidTokens.length > 0) {
-      this.createError = `أرقام هوية الأعضاء غير صالحة: ${memberNationalIdsResult.invalidTokens.join("، ")}`;
-      this.cdr.detectChanges();
-      return;
-    }
-
-    if (assigneeNationalIdsResult.invalidTokens.length > 0) {
-      this.createError = `أرقام هوية المكلّفين غير صالحة: ${assigneeNationalIdsResult.invalidTokens.join("، ")}`;
-      this.cdr.detectChanges();
-      return;
-    }
-
     const payload: CreateItemRequest = {
       ...this.newItem,
       title: this.newItem.title.trim(),
       description: this.newItem.description.trim(),
-      memberNationalIds: memberNationalIdsResult.ids,
-      assigneeNationalIds: assigneeNationalIdsResult.ids,
+      memberNationalIds: this.committeeSearchSelected.map(e => e.identityNumber),
+      assigneeNationalIds: [],
     };
 
     if (
@@ -266,13 +188,12 @@ export class ItemsListComponent implements OnInit {
 
     this.creating = true;
     this.itemsService.createItem(payload).subscribe({
-      next: (createdItem) => {
+      next: () => {
         this.showCreateModal = false;
         this.creating = false;
-        this.items = [createdItem, ...this.items];
-        this.applyFilters();
         this.resetNewItem();
         this.cdr.detectChanges();
+        this.loadData();
       },
       error: (err: HttpErrorResponse) => {
         this.creating = false;
@@ -280,6 +201,16 @@ export class ItemsListComponent implements OnInit {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  openCreateModal(): void {
+    this.resetNewItem();
+    this.newItem.memberIds = this.employee.map(e => +e.identityNumber);
+    this.membersExpanded = false;
+    this.committeeSearchQuery = '';
+    this.committeeSearchResults = [];
+    this.committeeSearchSelected = [];
+    this.showCreateModal = true;
   }
 
   resetNewItem(): void {
@@ -296,7 +227,66 @@ export class ItemsListComponent implements OnInit {
     };
     this.memberNationalIdsText = "";
     this.assigneeNationalIdsText = "";
+    this.committeeSearchQuery = '';
+    this.committeeSearchResults = [];
+    this.committeeSearchSelected = [];
     this.createError = null;
+  }
+
+  onCommitteeSearch(): void {
+    const q = this.committeeSearchQuery.trim();
+    if (!q) { this.committeeSearchResults = []; return; }
+    this.committeeSearch$.next(q);
+  }
+
+  private searchCommitteeUsers(q: string): void {
+    this.committeeSearchLoading = true;
+    this.usersService.getMawaradUsers(1, 8, q).subscribe({
+      next: (res) => {
+        this.committeeSearchResults = res.items.map(u => ({
+          fullName: u.fullName,
+          identityNumber: u.userName
+        }));
+        this.committeeSearchLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.committeeSearchLoading = false; }
+    });
+  }
+
+  get committeeCanAddByNationalId(): boolean {
+    const q = this.committeeSearchQuery.trim();
+    return /^\d{10}$/.test(q) &&
+      !this.committeeSearchLoading &&
+      !this.committeeSearchResults.find(e => e.identityNumber === q) &&
+      !this.committeeSearchSelected.find(e => e.identityNumber === q);
+  }
+
+  addByNationalId(): void {
+    const id = this.committeeSearchQuery.trim();
+    if (!/^\d{10}$/.test(id)) return;
+    if (!this.committeeSearchSelected.find(e => e.identityNumber === id)) {
+      this.committeeSearchSelected = [
+        ...this.committeeSearchSelected,
+        { fullName: id, identityNumber: id }
+      ];
+    }
+    this.committeeSearchQuery = '';
+    this.committeeSearchResults = [];
+  }
+
+  addToCommitteeList(emp: { fullName: string; identityNumber: string }): void {
+    if (!this.committeeSearchSelected.find(e => e.identityNumber === emp.identityNumber)) {
+      this.committeeSearchSelected = [...this.committeeSearchSelected, emp];
+    }
+    this.committeeSearchQuery = '';
+    this.committeeSearchResults = [];
+  }
+
+  removeFromCommitteeList(emp: { fullName: string; identityNumber: string }): void {
+    this.committeeSearchSelected = this.committeeSearchSelected.filter(
+      e => e.identityNumber !== emp.identityNumber
+    );
   }
 
   toggleMember(userId: number): void {
@@ -334,9 +324,6 @@ export class ItemsListComponent implements OnInit {
         status: this.status,
         type: this.filterType || undefined,
         search: this.searchQuery || undefined,
-        agencyId: this.selectedAgencyId,
-        departmentId: this.selectedDepartmentId,
-        sectionId: this.selectedSectionId,
       })
       .subscribe({
         next: (blob) => {

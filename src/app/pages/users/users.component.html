@@ -94,14 +94,12 @@
       </button>
 
       <div class="pagination-numbers d-flex gap-1">
-        <span class="page-num active">{{ MawaradUsers?.pageNumber }}</span>
-        
-        <span class="page-num" (click)="onPageChange(2)">2</span>
-        <span class="page-num" (click)="onPageChange(3)">3</span>
-        <span class="page-num" (click)="onPageChange(4)">4</span>
-        <span class="page-num" (click)="onPageChange(5)">5</span>
-        <span class="text-muted mx-1">...</span>
-        <span class="page-num">{{ MawaradUsers?.totalPages }}</span>
+        <ng-container *ngFor="let page of getPageNumbers()">
+          <span *ngIf="page < 0" class="text-muted mx-1">...</span>
+          <span *ngIf="page >= 0" class="page-num"
+                [class.active]="page === MawaradUsers?.pageNumber"
+                (click)="onPageChange(page)">{{ page }}</span>
+        </ng-container>
       </div>
 
       <button class="btn btn-link text-decoration-none text-dark p-0 me-3" 
