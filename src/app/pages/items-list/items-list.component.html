@@ -181,11 +181,6 @@
 </div> -->
 
 
-<button type="button" class="btn-primary" (click)="openCreateModal()">
-  <span class="material-icons">add</span>
-  إضافة جديد
-</button>
-
 <div *ngIf="showCreateModal" class="modal-overlay" (click)="showCreateModal = false">
   <div class="modal-container" (click)="$event.stopPropagation()" dir="rtl">
     

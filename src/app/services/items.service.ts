@@ -99,4 +99,12 @@ export class ItemsService {
   removeMember(itemId: number, userId: number): Observable<Item> {
     return this.http.delete<Item>(`${this.apiUrl}/items/${itemId}/members/${userId}`);
   }
+
+  addAssignee(itemId: number, userId: number): Observable<Item> {
+    return this.http.post<Item>(`${this.apiUrl}/items/${itemId}/assignees`, { userId });
+  }
+
+  removeAssignee(itemId: number, userId: number): Observable<Item> {
+    return this.http.delete<Item>(`${this.apiUrl}/items/${itemId}/assignees/${userId}`);
+  }
 }

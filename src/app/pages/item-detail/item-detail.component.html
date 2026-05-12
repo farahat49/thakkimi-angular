@@ -135,7 +135,7 @@
             تاريخ الاستحقاق
           </div>
           <div class="detail-card-value">
-            {{ item.dueDate | date: "d MMMM y, h:mm a" }}
+            {{ item.dueDate | date: "d MMMM y" : "" : "ar-SA" }}
           </div>
         </article>
 
@@ -145,7 +145,7 @@
             آخر تحديث
           </div>
           <div class="detail-card-value">
-            {{ item.updatedAt | date: "d MMMM y, h:mm a" }}
+            {{ item.updatedAt | date: "d MMMM y, HH:mm" : "+0300" : "ar-SA" }}
           </div>
         </article>
 
@@ -155,7 +155,7 @@
             تاريخ الإنشاء
           </div>
           <div class="detail-card-value">
-            {{ item.createdAt | date: "d MMMM y, h:mm a" }}
+            {{ item.createdAt | date: "d MMMM y, HH:mm" : "+0300" : "ar-SA" }}
           </div>
         </article>
       </section>
@@ -189,6 +189,16 @@
               <strong>{{ getUserName(assigneeId) }}</strong>
               <span>مكلف</span>
             </div>
+            <button
+              *ngIf="canManage"
+              type="button"
+              class="icon-button danger"
+              (click)="removeAssignee(assigneeId)"
+              [disabled]="memberActionBusy"
+              title="إزالة التكليف"
+            >
+              <span class="material-icons">person_remove</span>
+            </button>
           </article>
         </div>
 
@@ -199,9 +209,6 @@
     </section>
 
     <section *ngIf="activeTab === 'members'" class="content-stack">
-      <div *ngIf="memberActionError" class="error-banner">
-        {{ memberActionError }}
-      </div>
 
       <section class="members-card">
         <div class="section-header">
@@ -223,6 +230,16 @@
                 memberId === item.createdById ? "المنشئ" : "عضو"
               }}</span>
             </div>
+            <button
+              *ngIf="canManage && !item.assigneeIds?.includes(memberId)"
+              type="button"
+              class="icon-button accent"
+              (click)="addAssignee(memberId)"
+              [disabled]="memberActionBusy"
+              title="تكليف"
+            >
+              <span class="material-icons">assignment_ind</span>
+            </button>
             <button
               *ngIf="canManage && memberId !== item.createdById"
               type="button"
@@ -264,6 +281,16 @@
               <strong>{{ getUserName(assigneeId) }}</strong>
               <span>مكلف</span>
             </div>
+            <button
+              *ngIf="canManage"
+              type="button"
+              class="icon-button danger"
+              (click)="removeAssignee(assigneeId)"
+              [disabled]="memberActionBusy"
+              title="إزالة التكليف"
+            >
+              <span class="material-icons">person_remove</span>
+            </button>
           </article>
         </div>
 
@@ -283,13 +310,51 @@
           </div>
         </div>
 
+        <div *ngIf="memberActionError" class="error-banner member-error">
+          <span class="material-icons">error_outline</span>
+          {{ memberActionError }}
+        </div>
+
         <div class="member-form">
-          <select [(ngModel)]="selectedAddUserId" class="member-select">
-            <option [ngValue]="null">اختر مستخدماً</option>
-            <option *ngFor="let user of nonMembers" [ngValue]="user.id">
-              {{ user.name }}
-            </option>
-          </select>
+          <!-- Selected chip -->
+          <div *ngIf="addMemberSelected" class="add-member-selected">
+            <div class="add-member-chip">
+              <div class="person-avatar small">{{ addMemberSelected.name.charAt(0) }}</div>
+              <span>{{ addMemberSelected.name }}</span>
+              <button type="button" class="chip-clear" (click)="clearAddMember()" title="إلغاء">
+                <span class="material-icons">close</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Search input -->
+          <div *ngIf="!addMemberSelected" class="add-member-search-wrapper">
+            <span class="material-icons search-icon">search</span>
+            <input
+              type="text"
+              class="member-search-input"
+              placeholder="ابحث باسم المستخدم..."
+              [(ngModel)]="addMemberSearchQuery"
+              (focus)="addMemberSearchOpen = true"
+              (blur)="$event.relatedTarget ? null : (addMemberSearchOpen = false)"
+              autocomplete="off"
+            />
+            <div *ngIf="addMemberSearchOpen && filteredNonMembers.length > 0" class="add-member-dropdown">
+              <button
+                *ngFor="let user of filteredNonMembers"
+                type="button"
+                class="add-member-option"
+                (mousedown)="selectAddMember(user)"
+              >
+                <div class="person-avatar small">{{ user.name.charAt(0) }}</div>
+                <span class="option-name">{{ user.name }}</span>
+                <span *ngIf="user.nationalId" class="option-nid">{{ user.nationalId }}</span>
+              </button>
+            </div>
+            <div *ngIf="addMemberSearchOpen && addMemberSearchQuery && filteredNonMembers.length === 0" class="add-member-dropdown">
+              <div class="add-member-empty">لا توجد نتائج</div>
+            </div>
+          </div>
 
           <button
             class="assign-button"
@@ -320,7 +385,7 @@
             <div class="message-meta">
               <strong>{{ getUserName(msg.userId) }}</strong>
               <span>{{
-                msg.createdAt | date: "d MMM, h:mm a" : "" : "ar"
+                msg.createdAt | date: "d MMM, HH:mm" : "+0300" : "ar-SA"
               }}</span>
             </div>
             <div *ngIf="msg.text" class="message-text">{{ msg.text }}</div>
@@ -379,7 +444,7 @@
         <div class="audit-content">
           <div class="audit-row">
             <strong>{{ event.userName }}</strong>
-            <span>{{ event.timestamp | date: "d MMMM y, h:mm a" }}</span>
+            <span>{{ event.timestamp | date: "d MMMM y, HH:mm" : "+0300" : "ar-SA" }}</span>
           </div>
           <p>{{ event.description }}</p>
         </div>

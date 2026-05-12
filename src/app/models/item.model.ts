@@ -21,6 +21,7 @@ export interface Item {
   updatedAt: string;
   memberIds: number[];
   assigneeIds: number[];
+  mawaradDepartmentId?: number;
   unreadCount?: number;
   hasUnreadUpdates?: boolean;
 }

@@ -48,6 +48,10 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
   memberActionBusy = false;
   memberActionError: string | null = null;
 
+  addMemberSearchQuery = '';
+  addMemberSearchOpen = false;
+  addMemberSelected: { id: number; name: string } | null = null;
+
   constructor(
     private itemsService: ItemsService,
     private usersService: UsersService,
@@ -246,9 +250,42 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
 
   get nonMembers(): User[] {
     if (!this.item) return [];
-    return this.users.filter(
-      (user) => !this.item?.memberIds?.includes(user.id),
-    );
+    const isCommittee = this.item.type === 'COMMITTEE';
+    const deptId = this.item.mawaradDepartmentId;
+    return this.users.filter(user => {
+      if (this.item?.memberIds?.includes(user.id)) return false;
+      // committees can have members from any department
+      if (isCommittee) return true;
+      // tasks: only same Mawared department (or no department set)
+      if (deptId && user.departmentId && user.departmentId !== deptId) return false;
+      return true;
+    });
+  }
+
+  get filteredNonMembers(): User[] {
+    const q = this.addMemberSearchQuery.trim().toLowerCase();
+    if (!q) return this.nonMembers.slice(0, 10);
+    return this.nonMembers.filter(u =>
+      u.name.toLowerCase().includes(q) ||
+      (u.nationalId ?? '').includes(q)
+    ).slice(0, 10);
+  }
+
+  selectAddMember(user: User): void {
+    this.addMemberSelected = { id: user.id, name: user.name };
+    this.selectedAddUserId = user.id;
+    this.addMemberSearchQuery = '';
+    this.addMemberSearchOpen = false;
+    this.memberActionError = null;
+    this.cdr.detectChanges();
+  }
+
+  clearAddMember(): void {
+    this.addMemberSelected = null;
+    this.selectedAddUserId = null;
+    this.addMemberSearchQuery = '';
+    this.addMemberSearchOpen = false;
+    this.cdr.detectChanges();
   }
 
   addMember() {
@@ -262,6 +299,8 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
         next: (updated) => {
           this.item = updated;
           this.selectedAddUserId = null;
+          this.addMemberSelected = null;
+          this.addMemberSearchQuery = '';
           this.memberActionBusy = false;
           this.loadAudit(updated.id);
           this.cdr.detectChanges();
@@ -290,6 +329,46 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.memberActionError =
           err?.error?.message ?? "حدث خطأ أثناء إزالة العضو";
+        this.memberActionBusy = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  addAssignee(userId: number) {
+    if (!this.item) return;
+    this.memberActionBusy = true;
+    this.memberActionError = null;
+
+    this.itemsService.addAssignee(this.item.id, userId).subscribe({
+      next: (updated) => {
+        this.memberActionBusy = false;
+        this.loadItem(updated.id);
+        this.loadAudit(updated.id);
+      },
+      error: (err) => {
+        this.memberActionError =
+          err?.error?.message ?? "حدث خطأ أثناء إضافة التكليف";
+        this.memberActionBusy = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  removeAssignee(userId: number) {
+    if (!this.item) return;
+    this.memberActionBusy = true;
+    this.memberActionError = null;
+
+    this.itemsService.removeAssignee(this.item.id, userId).subscribe({
+      next: (updated) => {
+        this.memberActionBusy = false;
+        this.loadItem(updated.id);
+        this.loadAudit(updated.id);
+      },
+      error: (err) => {
+        this.memberActionError =
+          err?.error?.message ?? "حدث خطأ أثناء إزالة التكليف";
         this.memberActionBusy = false;
         this.cdr.detectChanges();
       },
@@ -332,8 +411,13 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
     this.itemsService.downloadAttachment(message.id).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
-        window.open(url, "_blank");
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = message.attachmentFileName || 'مرفق';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       },
     });
   }

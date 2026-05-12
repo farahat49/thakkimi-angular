@@ -88,13 +88,19 @@
           </div>
 
           <div *ngIf="expandedUser === stat.user.id" class="expanded-items">
-            <div *ngIf="stat.items.length === 0" class="no-items">لا توجد عناصر مرتبطة بهذا المستخدم</div>
-            <a *ngFor="let item of stat.items" [routerLink]="['/items', item.id]" class="item-row">
-              <span class="item-type" [class]="item.type.toLowerCase()">{{ item.type === 'TASK' ? 'مهمة' : 'لجنة' }}</span>
+            <div *ngIf="stat.items.length === 0" class="no-items">
+              <span class="material-icons">inbox</span>
+              <span>لا توجد عناصر مرتبطة بهذا المستخدم</span>
+            </div>
+            <a *ngFor="let item of stat.items" [routerLink]="['/items', item.id]"
+               class="item-row" [ngClass]="item.status.toLowerCase()">
+              <span class="item-type-dot" [ngClass]="item.type.toLowerCase()"></span>
+              <span class="item-type-label" [ngClass]="item.type.toLowerCase()">{{ item.type === 'TASK' ? 'مهمة' : 'لجنة' }}</span>
               <span class="item-title">{{ item.title }}</span>
-              <span class="item-status" [class]="item.status.toLowerCase()">
+              <span class="item-status-badge" [ngClass]="item.status.toLowerCase()">
                 {{ item.status === 'ACTIVE' ? 'قيد التنفيذ' : item.status === 'OVERDUE' ? 'متأخرة' : 'مكتملة' }}
               </span>
+              <span class="material-icons item-arrow">chevron_left</span>
             </a>
           </div>
         </div>
