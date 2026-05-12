@@ -52,6 +52,7 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
   addMemberSearchOpen = false;
   addMemberSelected: { id: number; name: string } | null = null;
 
+
   constructor(
     private itemsService: ItemsService,
     private usersService: UsersService,
@@ -133,7 +134,7 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
   }
 
   loadUsers() {
-    this.usersService.getUsers().subscribe({
+    this.usersService.getScopedUsers().subscribe({
       next: (users) => {
         this.users = [...users];
         this.cdr.detectChanges();
@@ -182,24 +183,6 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
     };
     this.showEditModal = true;
     this.cdr.detectChanges();
-  }
-
-  toggleEditMember(userId: number) {
-    const idx = this.editForm.memberIds.indexOf(userId);
-    if (idx >= 0) {
-      this.editForm.memberIds.splice(idx, 1);
-      return;
-    }
-    this.editForm.memberIds.push(userId);
-  }
-
-  toggleEditAssignee(userId: number) {
-    const idx = this.editForm.assigneeIds.indexOf(userId);
-    if (idx >= 0) {
-      this.editForm.assigneeIds.splice(idx, 1);
-      return;
-    }
-    this.editForm.assigneeIds.push(userId);
   }
 
   saveEdit() {
@@ -270,6 +253,8 @@ export class ItemDetailComponent implements OnInit, OnDestroy {
       (u.nationalId ?? '').includes(q)
     ).slice(0, 10);
   }
+
+
 
   selectAddMember(user: User): void {
     this.addMemberSelected = { id: user.id, name: user.name };

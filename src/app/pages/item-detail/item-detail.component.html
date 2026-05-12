@@ -458,7 +458,7 @@
   class="modal-overlay"
   (click)="showEditModal = false"
 >
-  <div class="modal" (click)="$event.stopPropagation()" dir="rtl">
+  <div class="edit-dialog" (click)="$event.stopPropagation()" dir="rtl">
     <div class="modal-header">
       <h2>تعديل {{ item ? getItemTypeLabel(item.type) : "العنصر" }}</h2>
       <button class="icon-button" (click)="showEditModal = false">
@@ -522,33 +522,6 @@
         </div>
       </div>
 
-      <div class="form-group">
-        <label>الأعضاء</label>
-        <div class="users-checkboxes">
-          <label *ngFor="let user of users" class="user-checkbox">
-            <input
-              type="checkbox"
-              [checked]="editForm.memberIds.includes(user.id)"
-              (change)="toggleEditMember(user.id)"
-            />
-            <span>{{ user.name }}</span>
-          </label>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>المكلفون</label>
-        <div class="users-checkboxes">
-          <label *ngFor="let user of users" class="user-checkbox">
-            <input
-              type="checkbox"
-              [checked]="editForm.assigneeIds.includes(user.id)"
-              (change)="toggleEditAssignee(user.id)"
-            />
-            <span>{{ user.name }}</span>
-          </label>
-        </div>
-      </div>
     </div>
 
     <div class="modal-footer">
