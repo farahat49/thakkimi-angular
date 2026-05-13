@@ -40,11 +40,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/users/users.component').then(m => m.UsersComponent),
     canActivate: [authGuard, adminGuard]
   },
-  {
-    path: 'roles',
-    loadComponent: () => import('./pages/roles/roles').then(m => m.Roles),
-    canActivate: [authGuard, adminGuard]
-  },
+  // {
+  //   path: 'roles',
+  //   loadComponent: () => import('./pages/roles/roles').then(m => m.Roles),
+  //   canActivate: [authGuard, adminGuard]
+  // },
   {
     path: 'organizations-admin',
     loadComponent: () => import('./pages/organizations-admin/organizations-admin.component').then(m => m.OrganizationsAdminComponent),

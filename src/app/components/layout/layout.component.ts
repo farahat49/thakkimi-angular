@@ -35,7 +35,7 @@ export class LayoutComponent implements OnInit {
 
     // { label: 'الهيكل التنظيمي', path: '/organizations-admin', icon: 'account_tree' },
       { label: 'المستخدمون', path: '/users', icon: 'group' },
-        { label: 'الصلاحيات', path: '/roles', icon: 'group' },
+        // { label: 'الصلاحيات', path: '/roles', icon: 'group' },
 
   ];
 

@@ -343,7 +343,7 @@ export class ItemsListComponent implements OnInit {
   }
 
   get canCreate(): boolean {
-    return this.authService.canManageItems();
+    return true;
   }
 
   private collectNationalIds(value: string): {

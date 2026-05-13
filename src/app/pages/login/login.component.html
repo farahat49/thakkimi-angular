@@ -10,13 +10,13 @@
 
     <form (ngSubmit)="onSubmit()" class="login-form">
       <div class="form-group">
-        <label for="email">البريد الإلكتروني</label>
+        <label for="email">رقم الهوية </label>
         <input
           id="email"
-          type="email"
+          type="text"
           [(ngModel)]="email"
           name="email"
-          placeholder="أدخل بريدك الإلكتروني"
+          placeholder="أدخل رقم الهوية"
           required
           class="form-input"
           dir="ltr"
